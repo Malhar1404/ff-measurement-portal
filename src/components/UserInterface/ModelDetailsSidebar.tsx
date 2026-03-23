@@ -15,6 +15,7 @@ import {
   Typography,
 } from '@mui/material';
 import { observer } from 'mobx-react-lite';
+import { useSnackbar } from 'notistack';
 import { SyntheticEvent, useState } from 'react';
 
 import { useMainContext } from '../../hooks/useMainContext';
@@ -24,6 +25,7 @@ type LandmarkCoordinate = 'x' | 'y' | 'z';
 
 export const ModelDetailsSidebar = observer(() => {
   const { meshesManager } = useMainContext();
+  const { enqueueSnackbar } = useSnackbar();
   const selectedModel = meshesManager.selectedModel;
   const meshLandmarks = selectedModel?.landmarks['Mesh landmarks'] || [];
   const modelImages = selectedModel?.images || [];
@@ -58,7 +60,48 @@ export const ModelDetailsSidebar = observer(() => {
   };
 
   const handleSaveLandmarks = () => {
+    if (!selectedModel) {
+      return;
+    }
+
+    if (!selectedModel.allMeshLandmarksSaved) {
+      enqueueSnackbar('Save all points first before exporting landmarks.', {
+        variant: 'error',
+      });
+      return;
+    }
+
     meshesManager.exportLandmarks();
+  };
+
+  const getLandmarkStatusStyles = (color?: string) => {
+    switch (color) {
+      case 'red':
+        return {
+          backgroundColor: 'rgba(211, 47, 47, 0.12)',
+          borderColor: 'rgba(211, 47, 47, 0.45)',
+          boxShadow: '0 8px 20px rgba(211, 47, 47, 0.14)',
+          coordinateBg: 'rgba(211, 47, 47, 0.08)',
+          titleColor: '#9a1b1b',
+        };
+      case 'green':
+        return {
+          backgroundColor: 'rgba(46, 125, 50, 0.12)',
+          borderColor: 'rgba(46, 125, 50, 0.42)',
+          boxShadow: '0 8px 20px rgba(46, 125, 50, 0.14)',
+          coordinateBg: 'rgba(46, 125, 50, 0.08)',
+          titleColor: '#1f6d23',
+        };
+      case 'yellow':
+      default:
+        return {
+          backgroundColor: 'rgba(255, 214, 10, 0.14)',
+          borderColor: 'rgba(214, 170, 0, 0.42)',
+          boxShadow: '0 8px 20px rgba(214, 170, 0, 0.12)',
+          coordinateBg: 'rgba(255, 214, 10, 0.08)',
+          titleColor: '#8a6a00',
+        };
+    }
   };
 
   return (
@@ -156,17 +199,16 @@ export const ModelDetailsSidebar = observer(() => {
               ) : (
                 meshLandmarks.map((landmark) => {
                   const isSelected = selectedLandmarkName === landmark.name;
+                  const statusStyles = getLandmarkStatusStyles(landmark.color);
 
                   return (
                 <Box
                   key={landmark.name}
                   sx={{
-                    backgroundColor: isSelected ? '#eef6ff' : '#ffffff',
-                    border: isSelected ? '1px solid #1976d2' : '1px solid #e0e0e0',
+                    backgroundColor: statusStyles.backgroundColor,
+                    border: `1px solid ${statusStyles.borderColor}`,
                     borderRadius: 2,
-                    boxShadow: isSelected
-                      ? '0 8px 20px rgba(25, 118, 210, 0.16)'
-                      : '0 2px 8px rgba(15, 23, 42, 0.06)',
+                    boxShadow: statusStyles.boxShadow,
                     p: 1.2,
                     transition:
                       'background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease',
@@ -181,7 +223,7 @@ export const ModelDetailsSidebar = observer(() => {
                     }}>
                     <Typography
                       sx={{
-                        color: isSelected ? '#0f4fa8' : '#2c3e50',
+                        color: statusStyles.titleColor,
                         fontSize: '0.88rem',
                         fontWeight: 700,
                       }}
@@ -200,6 +242,7 @@ export const ModelDetailsSidebar = observer(() => {
                         variant="outlined"
                         onClick={() => handleEditLandmark(landmark.name)}
                         sx={{
+                          backgroundColor: isSelected ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.2)',
                           borderRadius: 2,
                           fontSize: '0.7rem',
                           minWidth: 0,
@@ -214,11 +257,15 @@ export const ModelDetailsSidebar = observer(() => {
                         variant="contained"
                         onClick={() => handleSaveLandmark(landmark.name)}
                         sx={{
+                          backgroundColor: 'rgba(25, 118, 210, 0.9)',
                           borderRadius: 2,
                           boxShadow: 'none',
                           fontSize: '0.7rem',
                           minWidth: 0,
                           minHeight: 0,
+                          '&:hover': {
+                            backgroundColor: 'rgba(25, 118, 210, 1)',
+                          },
                           px: 0.75,
                           py: 0.25,
                           textTransform: 'none',
@@ -233,7 +280,7 @@ export const ModelDetailsSidebar = observer(() => {
                       <Box
                         key={coordinate}
                         sx={{
-                          backgroundColor: '#f8f9fa',
+                          backgroundColor: statusStyles.coordinateBg,
                           borderRadius: 1.5,
                           px: 0.85,
                           py: 0.8,

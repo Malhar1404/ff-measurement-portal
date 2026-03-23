@@ -1,5 +1,5 @@
 import {
-  Delete,
+  CheckCircle,
   Description,
   HistoryEdu,
   Image,
@@ -10,7 +10,6 @@ import {
   Box,
   Button,
   Divider,
-  IconButton,
   List,
   ListItem,
   ListItemButton,
@@ -100,11 +99,23 @@ export const Sidebar = observer(() => {
                 key={model.id}
                 disablePadding
                 secondaryAction={
-                    <IconButton edge="end" aria-label="delete" onClick={() => {
-                        // TODO: Implement delete in MeshesManager
+                  <Box
+                    sx={{
+                      alignItems: 'center',
+                      display: 'flex',
+                      justifyContent: 'center',
+                      minWidth: 32,
+                      mr: 1.5,
                     }}>
-                        <Delete fontSize="small" />
-                    </IconButton>
+                    <CheckCircle
+                      fontSize="small"
+                      sx={{
+                        color: model.allMeshLandmarksSaved
+                          ? 'success.main'
+                          : 'rgba(148, 163, 184, 0.45)',
+                      }}
+                    />
+                  </Box>
                 }
                >
                 <ListItemButton

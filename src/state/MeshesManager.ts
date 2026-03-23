@@ -100,6 +100,14 @@ export class MeshesManager {
       return;
     }
 
+    if (!selected.allMeshLandmarksSaved) {
+      this._libState.viewManager.addLog(
+        'Save all mesh landmarks before exporting JSON.',
+        'warning',
+      );
+      return;
+    }
+
     const rawFileName = selected.fileName || 'model.glb';
     const baseName = rawFileName.split('.')[0];
     const now = new Date();

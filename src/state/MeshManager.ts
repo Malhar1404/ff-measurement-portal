@@ -222,6 +222,17 @@ export class MeshManager {
     return this.lineData !== null;
   }
 
+  get unsavedMeshLandmarks() {
+    return this.landmarks['Mesh landmarks'].filter(
+      (landmark) => landmark.color !== 'green',
+    );
+  }
+
+  get allMeshLandmarksSaved() {
+    const meshLandmarks = this.landmarks['Mesh landmarks'];
+    return meshLandmarks.length > 0 && this.unsavedMeshLandmarks.length === 0;
+  }
+
   private updateSkirt() {
     const mesh = this.getPrimaryMesh();
     if (!mesh) return;
