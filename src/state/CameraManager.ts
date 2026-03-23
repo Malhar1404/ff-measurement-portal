@@ -7,7 +7,7 @@ import { StateManager } from './StateManager';
 
 export class CameraManager {
   private static readonly FIT_PADDING_RATIO = 0.04;
-  private static readonly MIN_DISTANCE_RATIO = 0.8;
+  private static readonly MIN_DISTANCE_RATIO = 0.5;
   private static readonly MAX_DISTANCE_RATIO = 1;
 
   private _libState: StateManager;
