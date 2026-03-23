@@ -27,13 +27,7 @@ import { ChangeEvent, SyntheticEvent, useRef } from 'react';
 
 import { useMainContext } from '../../hooks/useMainContext';
 
-export const Sidebar = observer(({ 
-    onUploadImages, 
-    onGenerateCSV 
-}: { 
-    onUploadImages: () => void;
-    onGenerateCSV: () => void;
-}) => {
+export const Sidebar = observer(() => {
   const { meshesManager, viewManager } = useMainContext();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -63,7 +57,7 @@ export const Sidebar = observer(({
         zIndex: 1100,
       }}>
       <Box sx={{ p: 2 }}>
-        <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2 }}>
+        <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 0 }}>
           Model Assets
         </Typography>
         <input
@@ -74,37 +68,6 @@ export const Sidebar = observer(({
           onChange={handleFileChange}
         />
         
-        <Stack spacing={1} sx={{ mb: 2 }}>
-          <Button
-            fullWidth
-            variant="contained"
-            startIcon={<Upload />}
-            onClick={() => fileInputRef.current?.click()}
-            sx={{ flex: 1 }}>
-            Upload GLB
-          </Button>
-          
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <Button
-              fullWidth
-              variant="outlined"
-              size="small"
-              startIcon={<Image />}
-              onClick={onUploadImages}
-              sx={{ flex: 1, fontSize: '0.75rem' }}>
-              Images
-            </Button>
-            <Button
-              fullWidth
-              variant="outlined"
-              size="small"
-              startIcon={<HistoryEdu />}
-              onClick={onGenerateCSV}
-              sx={{ flex: 1, fontSize: '0.75rem' }}>
-              CSV
-            </Button>
-          </Box>
-        </Stack>
       </Box>
 
       <Divider />
@@ -190,32 +153,6 @@ export const Sidebar = observer(({
       </Box>
 
       <Divider />
-
-      <Box sx={{ p: 2, display: 'flex', gap: 1 }}>
-         <Button
-            fullWidth
-            variant="outlined"
-            size="small"
-            color="secondary"
-            onClick={() => meshesManager.clear()}
-            disabled={meshesManager.modelsList.length === 0}
-            sx={{ flex: 1 }}
-         >
-            Clear All
-         </Button>
-         <Button
-            fullWidth
-            variant="contained"
-            size="small"
-            color="primary"
-            startIcon={<SaveAlt />}
-            onClick={() => meshesManager.exportLandmarks()}
-            disabled={!meshesManager.selectedModel?.hasLandmarks}
-            sx={{ flex: 1.5 }}
-         >
-            Export
-         </Button>
-      </Box>
     </Paper>
   );
 });
