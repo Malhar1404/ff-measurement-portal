@@ -49,9 +49,28 @@ export const GlbViewer = observer(() => {
             point.position.x as number,
             point.position.y as number,
             point.position.z as number,
-          ]}>
+          ]}
+          scale={
+            selectedModel?.selectedMeshLandmarkName === point.name
+              ? [1.35, 1.35, 1.35]
+              : [1, 1, 1]
+          }
+          onClick={(e: any) => {
+            e.stopPropagation();
+            selectedModel?.toggleMeshLandmarkSelection(point.name);
+          }}>
           <sphereGeometry args={[1, 24, 24]} />
-          <meshStandardMaterial color={point.color || defaultMeshPointColor} />
+          <meshStandardMaterial
+            color={point.color || defaultMeshPointColor}
+            emissive={
+              selectedModel?.selectedMeshLandmarkName === point.name
+                ? '#ffffff'
+                : '#000000'
+            }
+            emissiveIntensity={
+              selectedModel?.selectedMeshLandmarkName === point.name ? 0.35 : 0
+            }
+          />
         </mesh>
       ))}
     </group>

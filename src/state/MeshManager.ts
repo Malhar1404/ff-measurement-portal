@@ -33,6 +33,7 @@ export class MeshManager {
   lineData: BodyMeasurementPoints | null = null;
   landmarkResponse: any = null;
   measurementResponse: any = null;
+  selectedMeshLandmarkName: string | null = null;
 
   // Each mesh has its own skirt instance
   skirt: SkirtInstance;
@@ -79,7 +80,30 @@ export class MeshManager {
     this.images = images;
   }
 
+  toggleMeshLandmarkSelection(landmarkName: string) {
+    this.selectedMeshLandmarkName =
+      this.selectedMeshLandmarkName === landmarkName ? null : landmarkName;
+  }
+
   markMeshLandmarkEditing(landmarkName: string) {
+    const isAlreadyEditingSelected =
+      this.selectedMeshLandmarkName === landmarkName &&
+      this.landmarks['Mesh landmarks'].find((item) => item.name === landmarkName)
+        ?.color === 'red';
+
+    if (isAlreadyEditingSelected) {
+      const activeLandmark = this.landmarks['Mesh landmarks'].find(
+        (item) => item.name === landmarkName,
+      );
+
+      if (activeLandmark) {
+        activeLandmark.color = 'yellow';
+      }
+
+      this.selectedMeshLandmarkName = null;
+      return;
+    }
+
     this.landmarks['Mesh landmarks'].forEach((landmark) => {
       if (landmark.color === 'red') {
         landmark.color = 'yellow';
@@ -92,6 +116,7 @@ export class MeshManager {
 
     if (landmark) {
       landmark.color = 'red';
+      this.selectedMeshLandmarkName = landmarkName;
     }
   }
 
@@ -102,6 +127,7 @@ export class MeshManager {
 
     if (landmark) {
       landmark.color = 'green';
+      this.selectedMeshLandmarkName = null;
     }
   }
 

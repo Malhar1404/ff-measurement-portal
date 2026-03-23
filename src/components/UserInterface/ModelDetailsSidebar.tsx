@@ -21,6 +21,7 @@ export const ModelDetailsSidebar = observer(() => {
   const selectedModel = meshesManager.selectedModel;
   const meshLandmarks = selectedModel?.landmarks['Mesh landmarks'] || [];
   const modelImages = selectedModel?.images || [];
+  const selectedLandmarkName = selectedModel?.selectedMeshLandmarkName ?? null;
 
   const [activeTab, setActiveTab] = useState<SidebarTab>('landmarks');
   const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -151,15 +152,22 @@ export const ModelDetailsSidebar = observer(() => {
                   </Typography>
                 </Box>
               ) : (
-                meshLandmarks.map((landmark) => (
+                meshLandmarks.map((landmark) => {
+                  const isSelected = selectedLandmarkName === landmark.name;
+
+                  return (
                 <Box
                   key={landmark.name}
                   sx={{
-                    backgroundColor: '#ffffff',
-                    border: '1px solid #e0e0e0',
+                    backgroundColor: isSelected ? '#eef6ff' : '#ffffff',
+                    border: isSelected ? '1px solid #1976d2' : '1px solid #e0e0e0',
                     borderRadius: 2,
-                    boxShadow: '0 2px 8px rgba(15, 23, 42, 0.06)',
+                    boxShadow: isSelected
+                      ? '0 8px 20px rgba(25, 118, 210, 0.16)'
+                      : '0 2px 8px rgba(15, 23, 42, 0.06)',
                     p: 1.2,
+                    transition:
+                      'background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease',
                   }}>
                   <Box
                     sx={{
@@ -170,7 +178,11 @@ export const ModelDetailsSidebar = observer(() => {
                       mb: 0.9,
                     }}>
                     <Typography
-                      sx={{ color: '#2c3e50', fontSize: '0.88rem', fontWeight: 700 }}
+                      sx={{
+                        color: isSelected ? '#0f4fa8' : '#2c3e50',
+                        fontSize: '0.88rem',
+                        fontWeight: 700,
+                      }}
                       variant="body2">
                       {formatLandmarkLabel(landmark.name)}
                     </Typography>
@@ -238,7 +250,8 @@ export const ModelDetailsSidebar = observer(() => {
                     ))}
                   </Box>
                 </Box>
-              ))
+                  );
+                })
               )}
             </Box>
           ) : (
