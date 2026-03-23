@@ -1,11 +1,21 @@
-import { ThreeEvent, useThree } from '@react-three/fiber';
+
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 
 import { useMainContext } from './useMainContext';
+import { ThreeEvent } from '@react-three/fiber/dist/declarations/src/core/events';
 
-export const useMeshLandmarkDrag = () => {
-  const { camera, gl, raycaster } = useThree();
+type UseMeshLandmarkDragParams = {
+  camera: THREE.Camera;
+  gl: THREE.WebGLRenderer;
+  raycaster: THREE.Raycaster;
+};
+
+export const useMeshLandmarkDrag = ({
+  camera,
+  gl,
+  raycaster,
+}: UseMeshLandmarkDragParams) => {
   const { cameraManager, meshesManager } = useMainContext();
 
   const draggedLandmarkNameRef = useRef<string | null>(null);

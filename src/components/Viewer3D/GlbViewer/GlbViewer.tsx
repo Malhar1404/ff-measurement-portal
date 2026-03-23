@@ -1,3 +1,4 @@
+import { useThree } from '@react-three/fiber';
 import { observer } from 'mobx-react-lite';
 import * as THREE from 'three';
 
@@ -6,9 +7,10 @@ import { useMainContext } from '../../../hooks/useMainContext';
 import SkirtMesh from '../../SkirtCreation/SkirtMesh';
 
 export const GlbViewer = observer(() => {
+  const { camera, gl, raycaster } = useThree();
   const { meshesManager } = useMainContext();
   const { handleLandmarkClick, handleLandmarkPointerDown } =
-    useMeshLandmarkDrag();
+    useMeshLandmarkDrag({ camera, gl, raycaster });
   const selectedModel = meshesManager.selectedModel;
   const meshPoints = selectedModel?.landmarks['Mesh landmarks'] || [];
   const defaultMeshPointColor = 'yellow';
