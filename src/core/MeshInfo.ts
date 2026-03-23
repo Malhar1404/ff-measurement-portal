@@ -1,16 +1,33 @@
 import { makeAutoObservable } from 'mobx';
 import * as THREE from 'three';
 
+export type MeshImageView = 'front' | 'back' | 'left' | 'right';
+
+export type MeshImagePaths = Record<MeshImageView, string>;
+
 export class MeshInfo {
   private _id: string;
   private _name: string;
   private _mesh: THREE.Mesh;
   private _isVisible: boolean;
-  constructor(id: string, name: string, mesh: THREE.Mesh) {
+  private _imagePaths: MeshImagePaths;
+  constructor(
+    id: string,
+    name: string,
+    mesh: THREE.Mesh,
+    imagePaths?: Partial<MeshImagePaths>,
+  ) {
     this._id = id;
     this._name = name;
     this._mesh = mesh;
     this._isVisible = true;
+    this._imagePaths = {
+      front: '',
+      back: '',
+      left: '',
+      right: '',
+      ...imagePaths,
+    };
     makeAutoObservable(this);
   }
 
@@ -29,12 +46,27 @@ export class MeshInfo {
     return this._isVisible;
   }
 
+  get imagePaths() {
+    return this._imagePaths;
+  }
+
   setIsVisible(isVisible: boolean) {
     this._isVisible = isVisible;
   }
 
   setMesh(mesh: THREE.Mesh) {
     this._mesh = mesh;
+  }
+
+  setImagePath(view: MeshImageView, path: string) {
+    this._imagePaths[view] = path;
+  }
+
+  setImagePaths(imagePaths: Partial<MeshImagePaths>) {
+    this._imagePaths = {
+      ...this._imagePaths,
+      ...imagePaths,
+    };
   }
 
   changeColor(color: string) {

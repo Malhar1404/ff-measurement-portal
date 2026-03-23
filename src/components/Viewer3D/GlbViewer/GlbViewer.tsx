@@ -1,4 +1,3 @@
-import { TransformControls } from '@react-three/drei';
 import { observer } from 'mobx-react-lite';
 import { useEffect, useState } from 'react';
 import * as THREE from 'three';
@@ -272,16 +271,12 @@ const SkirtPlaneVisualizer = observer(({ skirtInstance }: { skirtInstance: any }
 });
 
 const SkirtWrapper = observer(({ skirtInstance }: { skirtInstance: any }) => {
-  const { viewManager } = useMainContext();
-  const [mesh, setMesh] = useState<THREE.Mesh | null>(null);
-
   // If skirt is not valid (no geometry), don't render
   if (!skirtInstance.hasValidSkirt) return null;
 
   return (
     <>
       <SkirtMesh
-        ref={setMesh}
         geometry={skirtInstance.skirtGeometry}
         waistY={skirtInstance.waistY}
         bottomY={skirtInstance.bottomY}
@@ -290,24 +285,6 @@ const SkirtWrapper = observer(({ skirtInstance }: { skirtInstance: any }) => {
       />
       {/* <SkirtDebugPoints skirtInstance={skirtInstance} /> */}
       {/* <SkirtPlaneVisualizer skirtInstance={skirtInstance} /> */}
-      {mesh &&
-        viewManager.isSkirtVisible &&
-        viewManager.isSkirtTransformVisible && (
-          <TransformControls
-            object={mesh}
-            mode="translate"
-            showY={false}
-            space="world"
-            onObjectChange={() => {
-              if (mesh) {
-                const newPos = mesh.position;
-                const diffX = newPos.x - skirtInstance.computedCenterX;
-                const diffZ = newPos.z - skirtInstance.computedCenterZ;
-                skirtInstance.setOffsets(diffX, diffZ);
-              }
-            }}
-          />
-        )}
     </>
   );
 });

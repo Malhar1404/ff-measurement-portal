@@ -9,7 +9,7 @@ import { useMainContext } from '../../hooks/useMainContext';
 import { Viewer3D } from '../Viewer3D/Viewer3D';
 import { FileUpload } from './FileUpload';
 import { GenerateCSVDialog } from './GenerateCSVDialog';
-import { Logger } from './Logger';
+import { ModelDetailsSidebar } from './ModelDetailsSidebar';
 import { RunTestModal } from './RunTestModal';
 import { Sidebar } from './Sidebar';
 
@@ -132,8 +132,8 @@ export const UiComp = observer(() => {
           <Viewer3D />
         </Box>
 
-        {/* Collapsible Logger - Fixed Position */}
-        <Logger />
+        {/* Right-side model details panel */}
+        <ModelDetailsSidebar />
       </Box>
 
       {/* Modals */}

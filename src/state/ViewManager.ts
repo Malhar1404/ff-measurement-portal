@@ -16,7 +16,6 @@ export class ViewManager {
   private _jsonUrl = './init.json';
   private _logs: LogEntry[] = [];
   private _isSkirtVisible = true;
-  private _isSkirtTransformVisible = false;
   private _showDebugPoints = true;
   private _activeCategoryTab: 'adult' | 'kid' = 'adult';
   private _isInitialLoading = false;
@@ -86,13 +85,12 @@ export class ViewManager {
     this._isSkirtVisible = value;
   }
 
+  // Kept as a no-op for compatibility with the unused legacy selector component.
   get isSkirtTransformVisible() {
-    return this._isSkirtTransformVisible;
+    return false;
   }
 
-  setIsSkirtTransformVisible(value: boolean) {
-    this._isSkirtTransformVisible = value;
-  }
+  setIsSkirtTransformVisible(_value: boolean) {}
 
   get showDebugPoints() {
     return this._showDebugPoints;

@@ -1,15 +1,11 @@
 import { observer } from 'mobx-react-lite';
 
-import { SkirtTypeSelector } from '../UI/SkirtTypeSelector';
+import { SkirtControls } from '../UI/SkirtControls';
 import { Camera } from './Camera/Camera.';
 import { Canvas3D } from './Canvas3D/Canvas3D';
 import { Env } from './Env/Env';
 import { GlbViewer } from './GlbViewer/GlbViewer';
 import { Light } from './Light/Light';
-
-
-type SkirtType = 'allstar_skirt_end' | 'school_skirt_end';
-
 
 export const Viewer3D = observer(() => {
   return (
@@ -22,7 +18,6 @@ export const Viewer3D = observer(() => {
         {/* <PostProcessing /> */}
       </Canvas3D>
 
-      {/* Skirt Type Selector */}
       <div
         style={{
           left: '20px',
@@ -30,7 +25,7 @@ export const Viewer3D = observer(() => {
           top: '20px',
           zIndex: 100,
         }}>
-        <SkirtTypeSelector />
+        <SkirtControls />
       </div>
     </div>
   );
