@@ -98,8 +98,7 @@ export class MeshManager {
   }
 
   toggleMeshLandmarkSelection(landmarkName: string) {
-    this.selectedMeshLandmarkName =
-      this.selectedMeshLandmarkName === landmarkName ? null : landmarkName;
+    this.markMeshLandmarkEditing(landmarkName);
   }
 
   markMeshLandmarkEditing(landmarkName: string) {
