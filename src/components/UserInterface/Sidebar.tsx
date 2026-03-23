@@ -23,7 +23,7 @@ import {
   Typography,
 } from '@mui/material';
 import { observer } from 'mobx-react-lite';
-import { useRef } from 'react';
+import { ChangeEvent, SyntheticEvent, useRef } from 'react';
 
 import { useMainContext } from '../../hooks/useMainContext';
 
@@ -37,7 +37,7 @@ export const Sidebar = observer(({
   const { meshesManager, viewManager } = useMainContext();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       const url = URL.createObjectURL(file);
@@ -112,8 +112,9 @@ export const Sidebar = observer(({
       <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: '#fff' }}>
         <Tabs 
             value={viewManager.activeCategoryTab} 
-            // @typescript-eslint/no-explicit-any
-            onChange={(_, newValue) => viewManager.setActiveCategoryTab(newValue)}
+            onChange={(_event: SyntheticEvent, newValue: 'adult' | 'kid') =>
+              viewManager.setActiveCategoryTab(newValue)
+            }
             variant="fullWidth"
             indicatorColor="primary"
             textColor="primary"

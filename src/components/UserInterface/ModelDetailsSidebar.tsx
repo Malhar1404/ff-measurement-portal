@@ -2,6 +2,7 @@ import { EditOutlined, SaveOutlined, Collections, EditLocationAlt } from '@mui/i
 import {
   Box,
   Button,
+  Dialog,
   Paper,
   Tab,
   Tabs,
@@ -22,6 +23,7 @@ export const ModelDetailsSidebar = observer(() => {
   const modelImages = selectedModel?.images || [];
 
   const [activeTab, setActiveTab] = useState<SidebarTab>('landmarks');
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   const handleTabChange = (_event: SyntheticEvent, value: SidebarTab) => {
     setActiveTab(value);
@@ -261,13 +263,19 @@ export const ModelDetailsSidebar = observer(() => {
                       border: '1px solid #e0e0e0',
                       borderRadius: 2,
                       boxShadow: '0 2px 8px rgba(15, 23, 42, 0.06)',
+                      cursor: 'pointer',
                       overflow: 'hidden',
+                      transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                      '&:hover': {
+                        boxShadow: '0 10px 24px rgba(15, 23, 42, 0.16)',
+                        transform: 'translateY(-2px)',
+                      },
                     }}>
-                    <Box
-                      component="img"
+                    <img
                       src={imagePath}
                       alt={`${selectedModel?.fileName || 'model'} image ${index + 1}`}
-                      sx={{
+                      onClick={() => setPreviewImage(imagePath)}
+                      style={{
                         display: 'block',
                         height: '100%',
                         objectFit: 'cover',
@@ -281,6 +289,51 @@ export const ModelDetailsSidebar = observer(() => {
           )}
         </Box>
       </Paper>
+
+      <Dialog
+        open={Boolean(previewImage)}
+        onClose={() => setPreviewImage(null)}
+        maxWidth={false}
+        PaperProps={{
+          sx: {
+            backgroundColor: 'transparent',
+            backgroundImage: 'none',
+            boxShadow: 'none',
+            overflow: 'visible',
+          },
+        }}
+        slotProps={{
+          backdrop: {
+            sx: {
+              backdropFilter: 'blur(14px)',
+              backgroundColor: 'rgba(15, 23, 42, 0.5)',
+            },
+          },
+        }}>
+        {previewImage ? (
+          <Box
+            sx={{
+              alignItems: 'center',
+              display: 'flex',
+              justifyContent: 'center',
+              maxHeight: '90vh',
+              maxWidth: '90vw',
+            }}>
+            <img
+              src={previewImage}
+              alt={`${selectedModel?.fileName || 'model'} preview`}
+              style={{
+                borderRadius: 3,
+                boxShadow: '0 24px 60px rgba(0, 0, 0, 0.35)',
+                display: 'block',
+                maxHeight: '90vh',
+                maxWidth: '90vw',
+                objectFit: 'contain',
+              }}
+            />
+          </Box>
+        ) : null}
+      </Dialog>
     </Box>
   );
 });

@@ -1,9 +1,7 @@
-import { PlayArrow } from '@mui/icons-material';
-import { Backdrop, Box, Button, CircularProgress, CssBaseline, Stack, Typography } from '@mui/material';
+import { Backdrop, Box, CircularProgress, CssBaseline, Stack, Typography } from '@mui/material';
+import { Theme } from '@mui/material/styles';
 import { observer } from 'mobx-react-lite';
-import { useState } from 'react';
-
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { APP_CONFIG } from '../../config/appConfig';
 import { useMainContext } from '../../hooks/useMainContext';
 import { Viewer3D } from '../Viewer3D/Viewer3D';
@@ -65,10 +63,6 @@ export const UiComp = observer(() => {
 
   const handleUploadImages = () => {
     setUploadImagesModalOpen(true);
-  };
-
-  const handleRunTest = () => {
-    setRunTestModalOpen(true);
   };
 
   const handleGenerateCSV = () => {
@@ -140,7 +134,7 @@ export const UiComp = observer(() => {
       <Backdrop
         sx={{ 
             color: '#fff', 
-            zIndex: (theme) => theme.zIndex.drawer + 2000,
+            zIndex: (theme: Theme) => theme.zIndex.drawer + 2000,
             backgroundColor: 'rgba(0, 0, 0, 0.85)',
             display: 'flex',
             flexDirection: 'column',
