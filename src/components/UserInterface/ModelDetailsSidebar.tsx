@@ -1,32 +1,22 @@
 import {
-  ChevronRight,
   Collections,
   EditLocationAlt,
-  Menu,
 } from '@mui/icons-material';
 import {
   Box,
   Chip,
-  IconButton,
   Paper,
   Tab,
   Tabs,
-  TextField,
   Typography,
 } from '@mui/material';
 import { observer } from 'mobx-react-lite';
-import { SyntheticEvent, useEffect, useState } from 'react';
+import { SyntheticEvent, useMemo, useState } from 'react';
 
 import { useMainContext } from '../../hooks/useMainContext';
 
 type SidebarTab = 'landmarks' | 'images';
 type LandmarkCoordinate = 'x' | 'y' | 'z';
-
-type EditableLandmark = {
-  id: string;
-  name: string;
-  position: Record<LandmarkCoordinate, number>;
-};
 
 const IMAGE_SLOTS = [
   { key: 'front', label: 'Front View' },
@@ -35,107 +25,43 @@ const IMAGE_SLOTS = [
   { key: 'right', label: 'Right View' },
 ] as const;
 
-const roundToTwoDecimals = (value: number) => Math.round(value * 100) / 100;
-
-const createPlaceholderLandmarks = (modelName?: string): EditableLandmark[] => {
-  const prefix = modelName?.split('.')[0] || 'Selected Model';
-
-  return [
-    {
-      id: 'waist',
-      name: `${prefix} Waist`,
-      position: { x: 12.45, y: 85.2, z: -4.18 },
-    },
-    {
-      id: 'hip',
-      name: `${prefix} Hip`,
-      position: { x: 15.32, y: 65.48, z: -2.91 },
-    },
-    {
-      id: 'hem',
-      name: `${prefix} Hem`,
-      position: { x: 11.08, y: 22.76, z: -3.44 },
-    },
-  ];
-};
-
 export const ModelDetailsSidebar = observer(() => {
   const { meshesManager } = useMainContext();
   const selectedModel = meshesManager.selectedModel;
 
-  const [isOpen, setIsOpen] = useState(true);
   const [activeTab, setActiveTab] = useState<SidebarTab>('landmarks');
-  const [landmarks, setLandmarks] = useState<EditableLandmark[]>(() =>
-    createPlaceholderLandmarks(),
-  );
 
-  useEffect(() => {
-    setLandmarks(createPlaceholderLandmarks(selectedModel?.fileName));
-  }, [selectedModel?.id, selectedModel?.fileName]);
+  const landmarkRows = useMemo(() => {
+    const meshLandmarks = selectedModel?.landmarks['Mesh landmarks'] || [];
+
+    return [
+      { key: 'chest_landmark', label: 'Chest' },
+      { key: 'narrow_waist_landmark', label: 'Waist' },
+      { key: 'hip_landmark', label: 'Hip' },
+    ].map(({ key, label }) => ({
+      label,
+      landmark: meshLandmarks.find((item) => item.name === key),
+    }));
+  }, [selectedModel]);
 
   const handleTabChange = (_event: SyntheticEvent, value: SidebarTab) => {
     setActiveTab(value);
   };
 
-  const handleCoordinateChange = (
-    landmarkId: string,
-    coordinate: LandmarkCoordinate,
-    value: string,
-  ) => {
-    const parsed = Number(value);
-    if (Number.isNaN(parsed)) {
-      return;
-    }
-
-    setLandmarks((current) =>
-      current.map((landmark) =>
-        landmark.id === landmarkId
-          ? {
-              ...landmark,
-              position: {
-                ...landmark.position,
-                [coordinate]: roundToTwoDecimals(parsed),
-              },
-            }
-          : landmark,
-      ),
-    );
-  };
+  const formatCoordinate = (value?: number) =>
+    typeof value === 'number' ? value.toFixed(2) : '--';
 
   return (
     <Box
       sx={{
         height: '80vh',
-        position: 'fixed',
-        right: isOpen ? 420 : 20,
+        position: 'absolute',
+        right: 0,
         top: '50%',
         transform: 'translateY(-50%)',
-        transition: 'right 0.3s ease-in-out',
         width: 360,
         zIndex: 1000,
       }}>
-      <IconButton
-        onClick={() => setIsOpen((current) => !current)}
-        sx={{
-          '&:hover': {
-            backgroundColor: '#1565c0',
-            transform: 'translateY(-50%) scale(1.05)',
-          },
-          backgroundColor: '#1976d2',
-          borderRadius: '8px 0 0 8px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-          color: 'white',
-          height: 60,
-          left: -40,
-          position: 'absolute',
-          top: '50%',
-          transform: 'translateY(-50%)',
-          transition: 'all 0.2s ease',
-          width: 40,
-        }}>
-        {isOpen ? <ChevronRight /> : <Menu />}
-      </IconButton>
-
       <Paper
         elevation={8}
         sx={{
@@ -154,7 +80,6 @@ export const ModelDetailsSidebar = observer(() => {
             backgroundColor: '#f8f9fa',
             borderBottom: '2px solid #e0e0e0',
             display: 'flex',
-            justifyContent: 'space-between',
             p: 2,
           }}>
           <Box sx={{ alignItems: 'center', display: 'flex', gap: 2 }}>
@@ -168,7 +93,7 @@ export const ModelDetailsSidebar = observer(() => {
               Model Details
             </Typography>
             <Chip
-              label={activeTab === 'landmarks' ? landmarks.length : IMAGE_SLOTS.length}
+              label={activeTab === 'landmarks' ? landmarkRows.length : IMAGE_SLOTS.length}
               size="small"
               sx={{
                 backgroundColor: '#1976d2',
@@ -180,17 +105,6 @@ export const ModelDetailsSidebar = observer(() => {
               }}
             />
           </Box>
-          <IconButton
-            onClick={() => setIsOpen(false)}
-            size="small"
-            sx={{
-              '&:hover': {
-                backgroundColor: '#e0e0e0',
-              },
-              color: '#666',
-            }}>
-            <ChevronRight />
-          </IconButton>
         </Box>
 
         <Box sx={{ backgroundColor: '#fff', borderBottom: '1px solid #e0e0e0' }}>
@@ -235,15 +149,17 @@ export const ModelDetailsSidebar = observer(() => {
               {selectedModel?.fileName || 'No model selected'}
             </Typography>
             <Typography sx={{ color: '#607d8b', mt: 0.5 }} variant="caption">
-              UI-only panel with placeholder content for now.
+              {activeTab === 'landmarks'
+                ? 'Showing selected model landmark values.'
+                : 'UI-only image placeholders for now.'}
             </Typography>
           </Box>
 
           {activeTab === 'landmarks' ? (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-              {landmarks.map((landmark) => (
+              {landmarkRows.map(({ label, landmark }) => (
                 <Box
-                  key={landmark.id}
+                  key={label}
                   sx={{
                     backgroundColor: '#ffffff',
                     border: '1px solid #e0e0e0',
@@ -254,31 +170,30 @@ export const ModelDetailsSidebar = observer(() => {
                   <Typography
                     sx={{ color: '#2c3e50', fontSize: '0.95rem', fontWeight: 700, mb: 1.25 }}
                     variant="body2">
-                    {landmark.name}
+                    {label}
                   </Typography>
 
                   <Box sx={{ display: 'grid', gap: 1, gridTemplateColumns: 'repeat(3, 1fr)' }}>
                     {(['x', 'y', 'z'] as LandmarkCoordinate[]).map((coordinate) => (
-                      <TextField
+                      <Box
                         key={coordinate}
-                        label={coordinate.toUpperCase()}
-                        size="small"
-                        type="number"
-                        value={landmark.position[coordinate].toFixed(2)}
-                        onChange={(event) =>
-                          handleCoordinateChange(
-                            landmark.id,
-                            coordinate,
-                            event.target.value,
-                          )
-                        }
-                        inputProps={{ step: '0.01' }}
                         sx={{
-                          '& .MuiInputBase-root': {
-                            backgroundColor: '#f8f9fa',
-                          },
-                        }}
-                      />
+                          backgroundColor: '#f8f9fa',
+                          borderRadius: 1.5,
+                          px: 1,
+                          py: 1,
+                        }}>
+                        <Typography
+                          sx={{ color: '#6b7280', fontSize: '0.72rem' }}
+                          variant="caption">
+                          {coordinate.toUpperCase()}
+                        </Typography>
+                        <Typography
+                          sx={{ color: '#1f2937', fontSize: '0.86rem', fontWeight: 600 }}
+                          variant="body2">
+                          {formatCoordinate(landmark?.position[coordinate])}
+                        </Typography>
+                      </Box>
                     ))}
                   </Box>
                 </Box>

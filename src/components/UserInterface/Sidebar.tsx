@@ -112,6 +112,7 @@ export const Sidebar = observer(({
       <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: '#fff' }}>
         <Tabs 
             value={viewManager.activeCategoryTab} 
+            // @typescript-eslint/no-explicit-any
             onChange={(_, newValue) => viewManager.setActiveCategoryTab(newValue)}
             variant="fullWidth"
             indicatorColor="primary"
