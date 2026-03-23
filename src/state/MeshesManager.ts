@@ -88,7 +88,7 @@ export class MeshesManager {
 
   exportLandmarks() {
     const selected = this.selectedModel;
-    if (!selected || !selected.landmarkResponse) {
+    if (!selected || selected.landmarks['Mesh landmarks'].length === 0) {
       this._libState.viewManager.addLog(
         'No landmark data for selected model to export.',
         'warning',
@@ -98,10 +98,31 @@ export class MeshesManager {
 
     const rawFileName = selected.fileName || 'model.glb';
     const baseName = rawFileName.split('.')[0];
-    const exportFileName = `${baseName}_landmarks.json`;
+    const now = new Date();
+    const formatPart = (value: number) => value.toString().padStart(2, '0');
+    const timestamp = [
+      now.getFullYear(),
+      formatPart(now.getMonth() + 1),
+      formatPart(now.getDate()),
+    ].join('-');
+    const exportFileName = `${baseName}_landmarks_${timestamp}.json`;
+
+    const meshLandmarks = selected.landmarks['Mesh landmarks'].reduce(
+      (acc, landmark) => {
+        acc[landmark.name] = {
+          x: landmark.position.x,
+          y: landmark.position.y,
+          z: landmark.position.z,
+        };
+        return acc;
+      },
+      {} as Record<string, { x: number; y: number; z: number }>,
+    );
 
     const exportData = {
-      [rawFileName]: selected.landmarkResponse,
+      [rawFileName]: {
+        mesh_landmarks: meshLandmarks,
+      },
     };
 
     const blob = new Blob([JSON.stringify(exportData, null, 2)], {

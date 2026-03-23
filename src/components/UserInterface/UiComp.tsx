@@ -61,23 +61,20 @@ export const UiComp = observer(() => {
     loadInitialModels();
   }, [meshesManager]);
 
-  const handleUploadImages = () => {
-    setUploadImagesModalOpen(true);
-  };
+  // const handleUploadImages = () => {
+  //   setUploadImagesModalOpen(true);
+  // };
 
-  const handleGenerateCSV = () => {
-    setOpenGenerateCSV(true);
-  };
+  // const handleGenerateCSV = () => {
+  //   setOpenGenerateCSV(true);
+  // };
 
   return (
     <Box sx={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden' }}>
       <CssBaseline />
 
       {/* Sidebar */}
-      <Sidebar
-        onUploadImages={handleUploadImages}
-        onGenerateCSV={handleGenerateCSV}
-      />
+      <Sidebar />
 
       {/* Main Content Area */}
       <Box

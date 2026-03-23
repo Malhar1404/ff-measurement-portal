@@ -1,4 +1,10 @@
-import { EditOutlined, SaveOutlined, Collections, EditLocationAlt } from '@mui/icons-material';
+import {
+  EditOutlined,
+  SaveAlt,
+  SaveOutlined,
+  Collections,
+  EditLocationAlt,
+} from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -40,12 +46,19 @@ export const ModelDetailsSidebar = observer(() => {
       .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
       .join(' ');
 
+  const formatModelName = (fileName?: string) =>
+    fileName ? fileName.replace(/\.[^/.]+$/, '') : 'No model selected';
+
   const handleEditLandmark = (landmarkName: string) => {
     selectedModel?.markMeshLandmarkEditing(landmarkName);
   };
 
   const handleSaveLandmark = (landmarkName: string) => {
     selectedModel?.markMeshLandmarkSaved(landmarkName);
+  };
+
+  const handleSaveLandmarks = () => {
+    meshesManager.exportLandmarks();
   };
 
   return (
@@ -87,7 +100,7 @@ export const ModelDetailsSidebar = observer(() => {
                 fontSize: '1rem',
                 fontWeight: 'bold',
               }}>
-              Model Details
+              {formatModelName(selectedModel?.fileName)}
             </Typography>
             
           </Box>
@@ -124,17 +137,6 @@ export const ModelDetailsSidebar = observer(() => {
             overflow: 'auto',
             p: 1.5,
           }}>
-          <Box
-            sx={{
-              backgroundColor: '#f8f9fa',
-              border: '1px solid #e3f2fd',
-              borderRadius: 2,
-              p: 1.2,
-            }}>
-            <Typography sx={{ color: '#2c3e50', fontWeight: 700 }} variant="body2">
-              {selectedModel?.fileName || 'No model selected'}
-            </Typography>
-          </Box>
 
           {activeTab === 'landmarks' ? (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
@@ -311,6 +313,31 @@ export const ModelDetailsSidebar = observer(() => {
             </Box>
           )}
         </Box>
+
+        {activeTab === 'landmarks' ? (
+          <Box
+            sx={{
+              backgroundColor: '#fff',
+              borderTop: '1px solid #e0e0e0',
+              p: 1.5,
+            }}>
+            <Button
+              fullWidth
+              size="small"
+              variant="outlined"
+              startIcon={<SaveAlt />}
+              onClick={handleSaveLandmarks}
+              disabled={!selectedModel?.hasLandmarks}
+              sx={{
+                borderRadius: 2,
+                fontSize: '0.75rem',
+                py: 0.5,
+                textTransform: 'none',
+              }}>
+              Save Landmarks
+            </Button>
+          </Box>
+        ) : null}
       </Paper>
 
       <Dialog
