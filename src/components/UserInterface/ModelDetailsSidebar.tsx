@@ -62,7 +62,7 @@ export const ModelDetailsSidebar = observer(() => {
         right: 0,
         top: '50%',
         transform: 'translateY(-50%)',
-        width: 360,
+        width: 320,
         zIndex: 1000,
       }}>
       <Paper

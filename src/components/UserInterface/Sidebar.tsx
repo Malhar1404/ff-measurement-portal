@@ -59,7 +59,7 @@ export const Sidebar = observer(({
         display: 'flex',
         flexDirection: 'column',
         height: '100%',
-        width: 300,
+        width: 260,
         zIndex: 1100,
       }}>
       <Box sx={{ p: 2 }}>
