@@ -79,6 +79,32 @@ export class MeshManager {
     this.images = images;
   }
 
+  markMeshLandmarkEditing(landmarkName: string) {
+    this.landmarks['Mesh landmarks'].forEach((landmark) => {
+      if (landmark.color === 'red') {
+        landmark.color = 'yellow';
+      }
+    });
+
+    const landmark = this.landmarks['Mesh landmarks'].find(
+      (item) => item.name === landmarkName,
+    );
+
+    if (landmark) {
+      landmark.color = 'red';
+    }
+  }
+
+  markMeshLandmarkSaved(landmarkName: string) {
+    const landmark = this.landmarks['Mesh landmarks'].find(
+      (item) => item.name === landmarkName,
+    );
+
+    if (landmark) {
+      landmark.color = 'green';
+    }
+  }
+
   processLandmarkResponse(data: any) {
     this.landmarkResponse = data;
 
@@ -98,12 +124,7 @@ export class MeshManager {
     const corrected = Utils3D.checkRayCastOnZAxis(this.scene, vectors);
 
     const landmarkObjects = lms.map((l, i) => ({
-      color:
-        l.name === 'chest_landmark'
-          ? 'red'
-          : l.name === 'hip_landmark'
-            ? 'green'
-            : 'blue',
+      color: 'yellow',
       name: l.name,
       position: corrected[i],
     }));

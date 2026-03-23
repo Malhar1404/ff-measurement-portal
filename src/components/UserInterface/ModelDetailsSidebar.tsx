@@ -39,6 +39,14 @@ export const ModelDetailsSidebar = observer(() => {
       .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
       .join(' ');
 
+  const handleEditLandmark = (landmarkName: string) => {
+    selectedModel?.markMeshLandmarkEditing(landmarkName);
+  };
+
+  const handleSaveLandmark = (landmarkName: string) => {
+    selectedModel?.markMeshLandmarkSaved(landmarkName);
+  };
+
   return (
     <Box
       sx={{
@@ -176,6 +184,7 @@ export const ModelDetailsSidebar = observer(() => {
                       <Button
                         size="small"
                         variant="outlined"
+                        onClick={() => handleEditLandmark(landmark.name)}
                         sx={{
                           borderRadius: 2,
                           fontSize: '0.7rem',
@@ -189,6 +198,7 @@ export const ModelDetailsSidebar = observer(() => {
                       <Button
                         size="small"
                         variant="contained"
+                        onClick={() => handleSaveLandmark(landmark.name)}
                         sx={{
                           borderRadius: 2,
                           boxShadow: 'none',

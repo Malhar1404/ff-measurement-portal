@@ -8,6 +8,7 @@ export const GlbViewer = observer(() => {
   const { meshesManager } = useMainContext();
   const selectedModel = meshesManager.selectedModel;
   const meshPoints = selectedModel?.landmarks['Mesh landmarks'] || [];
+  const defaultMeshPointColor = 'yellow';
 
   return (
     <group>
@@ -50,7 +51,7 @@ export const GlbViewer = observer(() => {
             point.position.z as number,
           ]}>
           <sphereGeometry args={[1, 24, 24]} />
-          <meshStandardMaterial color={point.color || 'green'} />
+          <meshStandardMaterial color={point.color || defaultMeshPointColor} />
         </mesh>
       ))}
     </group>
