@@ -7,6 +7,12 @@ import { useMeshLandmarkDrag } from '../../../hooks/useMeshLandmarkDrag';
 import { useMainContext } from '../../../hooks/useMainContext';
 import SkirtMesh from '../../SkirtCreation/SkirtMesh';
 
+const ALWAYS_VISIBLE_MEASUREMENT_LANDMARKS = new Set([
+  'chest_landmark',
+  'hip_landmark',
+  'narrow_waist_landmark',
+]);
+
 export const GlbViewer = observer(() => {
   const { camera, gl, raycaster } = useThree();
   const { meshesManager } = useMainContext();
@@ -90,6 +96,9 @@ const LandmarkPoint = observer(({
     color?: string;
     name: string;
     originalPosition?: THREE.Vector3;
+    originalSliceData?: {
+      largestContour: THREE.Vector3[];
+    } | null;
     position: THREE.Vector3;
     sliceData?: {
       largestContour: THREE.Vector3[];
@@ -104,10 +113,17 @@ const LandmarkPoint = observer(({
   const connectorPoints = [originalPosition, point.position];
   const activeContour =
     point.slicePreview?.largestContour ?? point.sliceData?.largestContour ?? [];
+  const originalContour = point.originalSliceData?.largestContour ?? [];
   const contourLinePoints =
     activeContour.length > 2 ? [...activeContour, activeContour[0]] : activeContour;
-  const controlColor = '#123c8b';
-  const controlAccentColor = '#0a2a66';
+  const originalContourLinePoints =
+    originalContour.length > 2 ? [...originalContour, originalContour[0]] : originalContour;
+  const shouldShowMeasurementControl = ALWAYS_VISIBLE_MEASUREMENT_LANDMARKS.has(
+    point.name,
+  );
+  const controlColor = isSelected ? '#1d4ed8' : '#123c8b';
+  const controlAccentColor = isSelected ? '#1e40af' : '#0a2a66';
+  const grooveColor = isSelected ? '#dbeafe' : '#bfdbfe';
   const handlePosition = new THREE.Vector3(
     point.position.x - leftGuideLength,
     point.position.y,
@@ -128,6 +144,16 @@ const LandmarkPoint = observer(({
 
   return (
     <group>
+      {originalContourLinePoints.length > 1 && (
+        <Line
+          points={originalContourLinePoints}
+          color="#8b949e"
+          depthTest={false}
+          lineWidth={1.9}
+          renderOrder={997}
+        />
+      )}
+
       {isSelected && contourLinePoints.length > 1 && (
         <Line
           points={contourLinePoints}
@@ -167,7 +193,7 @@ const LandmarkPoint = observer(({
         />
       )}
 
-      {isSelected && (
+      {shouldShowMeasurementControl && (
         <Line
           points={guideLinePoints}
           color={controlColor}
@@ -194,7 +220,7 @@ const LandmarkPoint = observer(({
         />
       </mesh>
 
-      {isSelected && (
+      {shouldShowMeasurementControl && (
         <mesh
           position={[
             handlePosition.x,
@@ -214,7 +240,7 @@ const LandmarkPoint = observer(({
         </mesh>
       )}
 
-      {isSelected && (
+      {shouldShowMeasurementControl && (
         <mesh
           position={[
             handlePosition.x - 1.1,
@@ -224,7 +250,7 @@ const LandmarkPoint = observer(({
           onPointerDown={(e: any) => handleLandmarkPointerDown(e, point.name)}>
           <boxGeometry args={[0.28, 1.05, 0.1]} />
           <meshStandardMaterial
-            color="#dbeafe"
+            color={grooveColor}
             transparent
             opacity={0.95}
             depthTest={false}
@@ -232,7 +258,7 @@ const LandmarkPoint = observer(({
         </mesh>
       )}
 
-      {isSelected && (
+      {shouldShowMeasurementControl && (
         <mesh
           position={[
             handlePosition.x,
@@ -242,7 +268,7 @@ const LandmarkPoint = observer(({
           onPointerDown={(e: any) => handleLandmarkPointerDown(e, point.name)}>
           <boxGeometry args={[0.28, 1.05, 0.1]} />
           <meshStandardMaterial
-            color="#dbeafe"
+            color={grooveColor}
             transparent
             opacity={0.95}
             depthTest={false}
@@ -250,7 +276,7 @@ const LandmarkPoint = observer(({
         </mesh>
       )}
 
-      {isSelected && (
+      {shouldShowMeasurementControl && (
         <mesh
           position={[
             handlePosition.x + 1.1,
@@ -260,7 +286,7 @@ const LandmarkPoint = observer(({
           onPointerDown={(e: any) => handleLandmarkPointerDown(e, point.name)}>
           <boxGeometry args={[0.28, 1.05, 0.1]} />
           <meshStandardMaterial
-            color="#dbeafe"
+            color={grooveColor}
             transparent
             opacity={0.95}
             depthTest={false}

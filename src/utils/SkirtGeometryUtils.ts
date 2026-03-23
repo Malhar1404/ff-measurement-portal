@@ -43,27 +43,38 @@ export class SkirtGeometryUtils {
       intersectsBounds: (box: THREE.Box3) => localPlane.intersectsBox(box),
       intersectsTriangle: (tri: any) => {
         const intersects: THREE.Vector3[] = [];
+        const pushUniqueIntersection = (intersection: THREE.Vector3 | null) => {
+          if (!intersection) {
+            return;
+          }
+
+          const threshold = 1e-5;
+          const alreadyExists = intersects.some(
+            (point) => point.distanceToSquared(intersection) < threshold,
+          );
+
+          if (!alreadyExists) {
+            intersects.push(intersection.clone());
+          }
+        };
 
         // Check edge AB
-        const i1 = localPlane.intersectLine(
+        pushUniqueIntersection(localPlane.intersectLine(
           new THREE.Line3(tri.a, tri.b),
           new THREE.Vector3(),
-        );
-        if (i1) intersects.push(i1.clone());
+        ));
 
         // Check edge BC
-        const i2 = localPlane.intersectLine(
+        pushUniqueIntersection(localPlane.intersectLine(
           new THREE.Line3(tri.b, tri.c),
           new THREE.Vector3(),
-        );
-        if (i2) intersects.push(i2.clone());
+        ));
 
         // Check edge CA
-        const i3 = localPlane.intersectLine(
+        pushUniqueIntersection(localPlane.intersectLine(
           new THREE.Line3(tri.c, tri.a),
           new THREE.Vector3(),
-        );
-        if (i3) intersects.push(i3.clone());
+        ));
 
         // If triangle intersects plane at exactly 2 points, we have a segment
         if (intersects.length === 2) {
@@ -89,20 +100,22 @@ export class SkirtGeometryUtils {
         this.contourLength(current.points) > this.contourLength(max.points) ? current : max
     );
 
-    // 🔥 Sample Outer Contour using segments ONLY from the main island
-    const center = this.computeCenterXZFromSegments(mainIsland.segments);
-    const sampledPoints = this.sampleOuterContour(
-      mainIsland.segments,
-      center,
-      sampleCount,
-    );
+    const largestContour = this.deduplicateContourPoints(mainIsland.points);
+    const sampledPoints =
+      largestContour.length >= 3
+        ? this.resampleContour(largestContour, sampleCount)
+        : this.sampleOuterContour(
+            mainIsland.segments,
+            this.computeCenterXZFromSegments(mainIsland.segments),
+            sampleCount,
+          );
 
     return {
       planeY: y,
       contours: contourIslands.map((island) =>
         this.deduplicateContourPoints(island.points),
       ),
-      largestContour: this.deduplicateContourPoints(mainIsland.points),
+      largestContour,
       sampledLargestContour: sampledPoints,
     };
   }
@@ -130,17 +143,30 @@ export class SkirtGeometryUtils {
         extended = false;
         for (let i = 0; i < segments.length; i++) {
           const [a, b] = segments[i];
-          if (a.distanceTo(end) < threshold) {
+          const contourStart = contourPoints[0];
+          const contourEnd = contourPoints[contourPoints.length - 1];
+
+          if (a.distanceTo(contourEnd) < threshold) {
             contourPoints.push(b);
             contourSegments.push([a, b]);
-            end = b;
             segments.splice(i, 1);
             extended = true;
             break;
-          } else if (b.distanceTo(end) < threshold) {
+          } else if (b.distanceTo(contourEnd) < threshold) {
             contourPoints.push(a);
             contourSegments.push([a, b]);
-            end = a;
+            segments.splice(i, 1);
+            extended = true;
+            break;
+          } else if (a.distanceTo(contourStart) < threshold) {
+            contourPoints.unshift(b);
+            contourSegments.unshift([a, b]);
+            segments.splice(i, 1);
+            extended = true;
+            break;
+          } else if (b.distanceTo(contourStart) < threshold) {
+            contourPoints.unshift(a);
+            contourSegments.unshift([a, b]);
             segments.splice(i, 1);
             extended = true;
             break;
@@ -209,27 +235,24 @@ export class SkirtGeometryUtils {
     a: THREE.Vector3,
     b: THREE.Vector3
   ): THREE.Vector2 | null {
-    const x1 = a.x - origin.x;
-    const y1 = a.z - origin.z;
-    const x2 = b.x - origin.x;
-    const y2 = b.z - origin.z;
+    const segment = new THREE.Vector2(b.x - a.x, b.z - a.z);
+    const offset = new THREE.Vector2(a.x - origin.x, a.z - origin.z);
+    const determinant = dir.x * segment.y - dir.y * segment.x;
 
-    const dx = x2 - x1;
-    const dy = y2 - y1;
+    if (Math.abs(determinant) < 1e-6) {
+      return null;
+    }
 
-    // Ray: P = t * dir
-    // Segment: Q = P1 + u * delta
-    // t * dir.x = x1 + u * dx
-    // t * dir.y = y1 + u * dy
+    const rayDistance =
+      (offset.x * segment.y - offset.y * segment.x) / determinant;
+    const segmentFactor =
+      (offset.x * dir.y - offset.y * dir.x) / determinant;
 
-    const det = dir.x * dy - dir.y * dx;
-    if (Math.abs(det) < 1e-6) return null; // Parallel
-
-    const u = (dir.y * x1 - dir.x * y1) / det;
-    const t = (x1 + u * dx) / dir.x;
-
-    if (u >= 0 && u <= 1 && t > 0) {
-        return new THREE.Vector2(origin.x + t * dir.x, origin.z + t * dir.y);
+    if (rayDistance >= 0 && segmentFactor >= 0 && segmentFactor <= 1) {
+        return new THREE.Vector2(
+          origin.x + rayDistance * dir.x,
+          origin.z + rayDistance * dir.y,
+        );
     }
 
     return null;

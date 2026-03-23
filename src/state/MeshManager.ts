@@ -2,7 +2,10 @@ import { makeAutoObservable } from 'mobx';
 import * as THREE from 'three';
 
 import { BodyMeasurementPoints } from '../types';
-import { MeshSliceResult } from '../utils/SkirtGeometryUtils';
+import {
+  MeshSliceResult,
+  SkirtGeometryUtils,
+} from '../utils/SkirtGeometryUtils';
 import { Utils3D } from '../utils/Utils3D';
 import { SkirtInstance } from './SkirtInstance';
 import { StateManager } from './StateManager';
@@ -23,6 +26,7 @@ export interface SingleLandmark {
   color: string;
   name: string;
   originalPosition?: THREE.Vector3;
+  originalSliceData?: MeshSliceResult | null;
   position: THREE.Vector3;
   sliceData?: MeshSliceResult | null;
   slicePreview?: MeshSliceResult | null;
@@ -217,11 +221,19 @@ export class MeshManager {
       },
     );
     const corrected = Utils3D.checkRayCastOnZAxis(this.scene, vectors);
+    const mesh = this.getPrimaryMesh();
+
+    if (mesh) {
+      mesh.updateWorldMatrix(true, true);
+    }
 
     const landmarkObjects = lms.map((l, i) => ({
       color: 'yellow',
       name: l.name,
       originalPosition: corrected[i].clone(),
+      originalSliceData: mesh
+        ? SkirtGeometryUtils.sliceMeshContoursAtY(mesh, corrected[i].y)
+        : null,
       position: corrected[i],
       sliceData: this.deserializeLandmarkSlice(l.raw),
       slicePreview: null,
@@ -250,6 +262,7 @@ export class MeshManager {
         color: 'orange',
         name: p.name,
         originalPosition: correctedPose[i].clone(),
+        originalSliceData: null,
         position: correctedPose[i],
         sliceData: null,
         slicePreview: null,
