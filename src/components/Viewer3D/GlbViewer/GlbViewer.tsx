@@ -105,7 +105,7 @@ const LandmarkPoint = observer(({
       )}
 
       {isSelected && hasMoved && (
-        <line raycast={() => null}>
+        <line >
           <bufferGeometry>
             <bufferAttribute
               attach="attributes-position"
@@ -117,7 +117,13 @@ const LandmarkPoint = observer(({
               ]}
             />
           </bufferGeometry>
-          <lineBasicMaterial color="#9ca3af" linewidth={2} transparent opacity={0.9} />
+          <lineBasicMaterial
+            color="#e8ff68"
+            depthTest={false}
+            linewidth={5}
+            transparent
+            opacity={1}
+          />
         </line>
       )}
 
@@ -141,60 +147,60 @@ const LandmarkPoint = observer(({
   );
 });
 
-const DEBUG_COLORS = [
-  '#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff',
-  '#ffa500', '#800080', '#008000', '#ffc0cb', '#a52a2a', '#808080'
-];
+// const DEBUG_COLORS = [
+//   '#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff',
+//   '#ffa500', '#800080', '#008000', '#ffc0cb', '#a52a2a', '#808080'
+// ];
 
-const SkirtDebugPoints = observer(({ skirtInstance }: { skirtInstance: any }) => {
-  const { viewManager } = useMainContext();
-  if (!viewManager.showDebugPoints) return null;
+// const SkirtDebugPoints = observer(({ skirtInstance }: { skirtInstance: any }) => {
+//   const { viewManager } = useMainContext();
+//   if (!viewManager.showDebugPoints) return null;
 
-  return (
-    <group position={[skirtInstance.centerX, 0, skirtInstance.centerZ]}>
-      {skirtInstance.waistToHipContours.map((contour: THREE.Vector3[], levelIndex: number) => (
-        <group key={`level-${levelIndex}`}>
-          {contour.map((p, pointIndex) => (
-            <mesh key={`p-${levelIndex}-${pointIndex}`} position={p}>
-              <sphereGeometry args={[0.2, 8, 8]} />
-              <meshStandardMaterial color={DEBUG_COLORS[levelIndex % DEBUG_COLORS.length]} />
-            </mesh>
-          ))}
-        </group>
-      ))}
-    </group>
-  );
-});
+//   return (
+//     <group position={[skirtInstance.centerX, 0, skirtInstance.centerZ]}>
+//       {skirtInstance.waistToHipContours.map((contour: THREE.Vector3[], levelIndex: number) => (
+//         <group key={`level-${levelIndex}`}>
+//           {contour.map((p, pointIndex) => (
+//             <mesh key={`p-${levelIndex}-${pointIndex}`} position={p}>
+//               <sphereGeometry args={[0.2, 8, 8]} />
+//               <meshStandardMaterial color={DEBUG_COLORS[levelIndex % DEBUG_COLORS.length]} />
+//             </mesh>
+//           ))}
+//         </group>
+//       ))}
+//     </group>
+//   );
+// });
 
-const SkirtPlaneVisualizer = observer(({ skirtInstance }: { skirtInstance: any }) => {
-  const { viewManager } = useMainContext();
-  if (!viewManager.showDebugPoints) return null;
+// const SkirtPlaneVisualizer = observer(({ skirtInstance }: { skirtInstance: any }) => {
+//   const { viewManager } = useMainContext();
+//   if (!viewManager.showDebugPoints) return null;
 
-  const yLevels = skirtInstance.waistToHipContours
-    .map((contour: THREE.Vector3[]) => contour[0]?.y)
-    .filter((y: number | undefined) => y !== undefined);
+//   const yLevels = skirtInstance.waistToHipContours
+//     .map((contour: THREE.Vector3[]) => contour[0]?.y)
+//     .filter((y: number | undefined) => y !== undefined);
 
-  if (skirtInstance.bottomY < skirtInstance.hipY) {
-    yLevels.push(skirtInstance.bottomY);
-  }
+//   if (skirtInstance.bottomY < skirtInstance.hipY) {
+//     yLevels.push(skirtInstance.bottomY);
+//   }
 
-  return (
-    <group position={[skirtInstance.centerX, 0, skirtInstance.centerZ]}>
-      {yLevels.map((y: number, index: number) => (
-        <mesh key={`plane-${index}`} position={[0, y, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <planeGeometry args={[100, 100]} />
-          <meshStandardMaterial
-            color={DEBUG_COLORS[index % DEBUG_COLORS.length]}
-            transparent
-            opacity={0.1}
-            side={THREE.DoubleSide}
-            depthWrite={false}
-          />
-        </mesh>
-      ))}
-    </group>
-  );
-});
+//   return (
+//     <group position={[skirtInstance.centerX, 0, skirtInstance.centerZ]}>
+//       {yLevels.map((y: number, index: number) => (
+//         <mesh key={`plane-${index}`} position={[0, y, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+//           <planeGeometry args={[100, 100]} />
+//           <meshStandardMaterial
+//             color={DEBUG_COLORS[index % DEBUG_COLORS.length]}
+//             transparent
+//             opacity={0.1}
+//             side={THREE.DoubleSide}
+//             depthWrite={false}
+//           />
+//         </mesh>
+//       ))}
+//     </group>
+//   );
+// });
 
 const SkirtWrapper = observer(({ skirtInstance }: { skirtInstance: any }) => {
   if (!skirtInstance.hasValidSkirt) return null;
