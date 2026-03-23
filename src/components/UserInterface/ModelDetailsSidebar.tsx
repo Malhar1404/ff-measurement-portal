@@ -13,7 +13,7 @@ import {
   Typography,
 } from '@mui/material';
 import { observer } from 'mobx-react-lite';
-import { SyntheticEvent, useMemo, useState } from 'react';
+import { SyntheticEvent, useState } from 'react';
 
 import { useMainContext } from '../../hooks/useMainContext';
 
@@ -30,21 +30,9 @@ const IMAGE_SLOTS = [
 export const ModelDetailsSidebar = observer(() => {
   const { meshesManager } = useMainContext();
   const selectedModel = meshesManager.selectedModel;
+  const meshLandmarks = selectedModel?.landmarks['Mesh landmarks'] || [];
 
   const [activeTab, setActiveTab] = useState<SidebarTab>('landmarks');
-
-  const landmarkRows = useMemo(() => {
-    const meshLandmarks = selectedModel?.landmarks['Mesh landmarks'] || [];
-
-    return [
-      { key: 'chest_landmark', label: 'Chest' },
-      { key: 'narrow_waist_landmark', label: 'Waist' },
-      { key: 'hip_landmark', label: 'Hip' },
-    ].map(({ key, label }) => ({
-      label,
-      landmark: meshLandmarks.find((item) => item.name === key),
-    }));
-  }, [selectedModel]);
 
   const handleTabChange = (_event: SyntheticEvent, value: SidebarTab) => {
     setActiveTab(value);
@@ -52,6 +40,13 @@ export const ModelDetailsSidebar = observer(() => {
 
   const formatCoordinate = (value?: number) =>
     typeof value === 'number' ? value.toFixed(2) : '--';
+
+  const formatLandmarkLabel = (name: string) =>
+    name
+      .replace(/_landmark$/i, '')
+      .split('_')
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ');
 
   return (
     <Box
@@ -143,9 +138,23 @@ export const ModelDetailsSidebar = observer(() => {
 
           {activeTab === 'landmarks' ? (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-              {landmarkRows.map(({ label, landmark }) => (
+              {meshLandmarks.length === 0 ? (
                 <Box
-                  key={label}
+                  sx={{
+                    backgroundColor: '#ffffff',
+                    border: '1px solid #e0e0e0',
+                    borderRadius: 2,
+                    p: 2,
+                    textAlign: 'center',
+                  }}>
+                  <Typography color="text.secondary" variant="body2">
+                    No mesh landmarks available
+                  </Typography>
+                </Box>
+              ) : (
+                meshLandmarks.map((landmark) => (
+                <Box
+                  key={landmark.name}
                   sx={{
                     backgroundColor: '#ffffff',
                     border: '1px solid #e0e0e0',
@@ -164,7 +173,7 @@ export const ModelDetailsSidebar = observer(() => {
                     <Typography
                       sx={{ color: '#2c3e50', fontSize: '0.88rem', fontWeight: 700 }}
                       variant="body2">
-                      {label}
+                      {formatLandmarkLabel(landmark.name)}
                     </Typography>
 
                     <Box
@@ -228,7 +237,8 @@ export const ModelDetailsSidebar = observer(() => {
                     ))}
                   </Box>
                 </Box>
-              ))}
+              ))
+              )}
             </Box>
           ) : (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>

@@ -15,7 +15,7 @@ export class ViewManager {
   private _meshInfoJson: MeshInfoJson | null = null;
   private _jsonUrl = './init.json';
   private _logs: LogEntry[] = [];
-  private _isSkirtVisible = true;
+  private _isSkirtVisible = false;
   private _showDebugPoints = true;
   private _activeCategoryTab: 'adult' | 'kid' = 'adult';
   private _isInitialLoading = false;
