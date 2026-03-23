@@ -48,34 +48,95 @@ export const GlbViewer = observer(() => {
       })}
 
       {meshPoints.map((point: any) => (
-        <mesh
+        <LandmarkPoint
           key={`mesh-landmark-${point.name}`}
+          defaultMeshPointColor={defaultMeshPointColor}
+          handleLandmarkClick={handleLandmarkClick}
+          handleLandmarkPointerDown={handleLandmarkPointerDown}
+          isSelected={selectedModel?.selectedMeshLandmarkName === point.name}
+          point={point}
+        />
+      ))}
+    </group>
+  );
+});
+
+const LandmarkPoint = observer(({
+  defaultMeshPointColor,
+  handleLandmarkClick,
+  handleLandmarkPointerDown,
+  isSelected,
+  point,
+}: {
+  defaultMeshPointColor: string;
+  handleLandmarkClick: (event: any, landmarkName: string) => void;
+  handleLandmarkPointerDown: (event: any, landmarkName: string) => void;
+  isSelected: boolean;
+  point: {
+    color?: string;
+    name: string;
+    originalPosition?: THREE.Vector3;
+    position: THREE.Vector3;
+  };
+}) => {
+  const originalPosition = point.originalPosition ?? point.position;
+  const hasMoved = originalPosition.distanceToSquared(point.position) > 0.0001;
+  const connectorPoints = [originalPosition, point.position];
+
+  return (
+    <group>
+      {(hasMoved || isSelected) && (
+        <mesh
+          raycast={() => null}
           position={[
-            point.position.x as number,
-            point.position.y as number,
-            point.position.z as number,
-          ]}
-          scale={
-            selectedModel?.selectedMeshLandmarkName === point.name
-              ? [1.35, 1.35, 1.35]
-              : [1, 1, 1]
-          }
-          onPointerDown={(e: any) => handleLandmarkPointerDown(e, point.name)}
-          onClick={(e: any) => handleLandmarkClick(e, point.name)}>
-          <sphereGeometry args={[1, 24, 24]} />
+            originalPosition.x,
+            originalPosition.y,
+            originalPosition.z,
+          ]}>
+          <sphereGeometry args={[0.72, 18, 18]} />
           <meshStandardMaterial
-            color={point.color || defaultMeshPointColor}
-            emissive={
-              selectedModel?.selectedMeshLandmarkName === point.name
-                ? '#ffffff'
-                : '#000000'
-            }
-            emissiveIntensity={
-              selectedModel?.selectedMeshLandmarkName === point.name ? 0.35 : 0
-            }
+            color="#9aa0a6"
+            emissive="#4b5563"
+            emissiveIntensity={0.08}
+            opacity={0.45}
+            transparent
           />
         </mesh>
-      ))}
+      )}
+
+      {isSelected && hasMoved && (
+        <line raycast={() => null}>
+          <bufferGeometry>
+            <bufferAttribute
+              attach="attributes-position"
+              args={[
+                new Float32Array(
+                  connectorPoints.flatMap((vector) => [vector.x, vector.y, vector.z]),
+                ),
+                3,
+              ]}
+            />
+          </bufferGeometry>
+          <lineBasicMaterial color="#9ca3af" linewidth={2} transparent opacity={0.9} />
+        </line>
+      )}
+
+      <mesh
+        position={[
+          point.position.x as number,
+          point.position.y as number,
+          point.position.z as number,
+        ]}
+        scale={isSelected ? [1.35, 1.35, 1.35] : [1, 1, 1]}
+        onPointerDown={(e: any) => handleLandmarkPointerDown(e, point.name)}
+        onClick={(e: any) => handleLandmarkClick(e, point.name)}>
+        <sphereGeometry args={[1, 24, 24]} />
+        <meshStandardMaterial
+          color={point.color || defaultMeshPointColor}
+          emissive={isSelected ? '#ffffff' : '#000000'}
+          emissiveIntensity={isSelected ? 0.35 : 0}
+        />
+      </mesh>
     </group>
   );
 });

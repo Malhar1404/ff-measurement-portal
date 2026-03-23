@@ -9,6 +9,7 @@ import { StateManager } from './StateManager';
 export interface SingleLandmark {
   color: string;
   name: string;
+  originalPosition?: THREE.Vector3;
   position: THREE.Vector3;
 }
 
@@ -168,6 +169,7 @@ export class MeshManager {
     const landmarkObjects = lms.map((l, i) => ({
       color: 'yellow',
       name: l.name,
+      originalPosition: corrected[i].clone(),
       position: corrected[i],
     }));
 
@@ -193,6 +195,7 @@ export class MeshManager {
       const poseLandmarkObjects = poseVectors.map((p, i) => ({
         color: 'orange',
         name: p.name,
+        originalPosition: correctedPose[i].clone(),
         position: correctedPose[i],
       }));
 
