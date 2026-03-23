@@ -6,7 +6,6 @@ import { APP_CONFIG } from '../../config/appConfig';
 import { useMainContext } from '../../hooks/useMainContext';
 import { Viewer3D } from '../Viewer3D/Viewer3D';
 import { FileUpload } from './FileUpload';
-import { GenerateCSVDialog } from './GenerateCSVDialog';
 import { ModelDetailsSidebar } from './ModelDetailsSidebar';
 import { RunTestModal } from './RunTestModal';
 import { Sidebar } from './Sidebar';
@@ -121,11 +120,6 @@ export const UiComp = observer(() => {
         onClose={() => setUploadImagesModalOpen(false)}
         title="Upload Images"
         accept=".jpg,.jpeg,.png,.gif,.bmp,.webp"
-      />
-
-      <GenerateCSVDialog
-        open={openGenerateCSV}
-        onClose={() => setOpenGenerateCSV(false)}
       />
 
       {/* Global Initial Loading Overlay */}
