@@ -70,21 +70,19 @@ export const UiComp = observer(() => {
   // };
 
   return (
-    <Box sx={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden' }}>
+    <Box sx={{ height: '100vh', width: '100vw', overflow: 'hidden' }}>
       <CssBaseline />
-
-      {/* Sidebar */}
-      <Sidebar />
 
       {/* Main Content Area */}
       <Box
         sx={{
           backgroundColor: '#f8f9fa',
           display: 'flex',
-          flex: 1,
           flexDirection: 'column',
+          height: '100%',
           position: 'relative',
-          overflow: 'hidden'
+          overflow: 'hidden',
+          width: '100%',
         }}>
 
         {/* 3D Viewer Area */}
@@ -96,6 +94,9 @@ export const UiComp = observer(() => {
             position: 'relative',
           }}>
           <Viewer3D />
+
+          {/* Left-side assets panel */}
+          <Sidebar />
         </Box>
 
         {/* Right-side model details panel */}

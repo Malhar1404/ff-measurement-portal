@@ -52,7 +52,11 @@ export const Sidebar = observer(() => {
         bgcolor: '#f8f9fa',
         display: 'flex',
         flexDirection: 'column',
-        height: '100%',
+        height: '80vh',
+        left: 0,
+        position: 'absolute',
+        top: '50%',
+        transform: 'translateY(-50%)',
         width: 260,
         zIndex: 1100,
       }}>

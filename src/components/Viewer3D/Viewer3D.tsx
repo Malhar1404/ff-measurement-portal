@@ -25,7 +25,7 @@ export const Viewer3D = observer(() => {
           top: '20px',
           zIndex: 100,
         }}>
-        <SkirtControls />
+        {/* <SkirtControls /> */}
       </div>
     </div>
   );
