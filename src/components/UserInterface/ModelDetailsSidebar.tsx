@@ -7,7 +7,6 @@ import {
 import {
   Box,
   Button,
-  Chip,
   Paper,
   Tab,
   Tabs,
@@ -95,18 +94,7 @@ export const ModelDetailsSidebar = observer(() => {
               }}>
               Model Details
             </Typography>
-            <Chip
-              label={activeTab === 'landmarks' ? landmarkRows.length : IMAGE_SLOTS.length}
-              size="small"
-              sx={{
-                backgroundColor: '#1976d2',
-                color: 'white',
-                fontSize: '0.8rem',
-                fontWeight: 'bold',
-                height: '24px',
-                minWidth: '24px',
-              }}
-            />
+            
           </Box>
         </Box>
 
@@ -268,15 +256,7 @@ export const ModelDetailsSidebar = observer(() => {
                     <Typography sx={{ color: '#2c3e50', fontSize: '0.84rem', fontWeight: 700 }} variant="body2">
                       {slot.label}
                     </Typography>
-                    <Chip
-                      label="Placeholder"
-                      size="small"
-                      sx={{
-                        backgroundColor: '#e3f2fd',
-                        color: '#1565c0',
-                        fontWeight: 600,
-                      }}
-                    />
+                    
                   </Box>
 
                   <Box
