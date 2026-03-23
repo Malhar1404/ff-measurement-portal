@@ -2,15 +2,30 @@ import { makeAutoObservable } from 'mobx';
 import * as THREE from 'three';
 
 import { BodyMeasurementPoints } from '../types';
+import { MeshSliceResult } from '../utils/SkirtGeometryUtils';
 import { Utils3D } from '../utils/Utils3D';
 import { SkirtInstance } from './SkirtInstance';
 import { StateManager } from './StateManager';
+
+export interface SerializedSlicePoint {
+  x: number;
+  y: number;
+  z: number;
+}
+
+export interface SerializedLandmarkSlice {
+  plane_y: number;
+  contours: SerializedSlicePoint[][];
+  largest_contour: SerializedSlicePoint[];
+}
 
 export interface SingleLandmark {
   color: string;
   name: string;
   originalPosition?: THREE.Vector3;
   position: THREE.Vector3;
+  sliceData?: MeshSliceResult | null;
+  slicePreview?: MeshSliceResult | null;
 }
 
 export interface LandmarkType {
@@ -94,7 +109,40 @@ export class MeshManager {
     }
 
     landmark.position = position.clone();
+    landmark.sliceData = null;
+    landmark.slicePreview = null;
     this.updateSkirt();
+  }
+
+  updateMeshLandmarkSlicePreview(
+    landmarkName: string,
+    slicePreview: MeshSliceResult | null,
+  ) {
+    const landmark = this.landmarks['Mesh landmarks'].find(
+      (item) => item.name === landmarkName,
+    );
+
+    if (!landmark) {
+      return;
+    }
+
+    landmark.slicePreview = slicePreview;
+  }
+
+  commitMeshLandmarkSlice(
+    landmarkName: string,
+    sliceData: MeshSliceResult | null,
+  ) {
+    const landmark = this.landmarks['Mesh landmarks'].find(
+      (item) => item.name === landmarkName,
+    );
+
+    if (!landmark) {
+      return;
+    }
+
+    landmark.sliceData = sliceData;
+    landmark.slicePreview = null;
   }
 
   toggleMeshLandmarkSelection(landmarkName: string) {
@@ -114,6 +162,7 @@ export class MeshManager {
 
       if (activeLandmark) {
         activeLandmark.color = 'yellow';
+        activeLandmark.slicePreview = null;
       }
 
       this.selectedMeshLandmarkName = null;
@@ -143,6 +192,7 @@ export class MeshManager {
 
     if (landmark) {
       landmark.color = 'green';
+      landmark.slicePreview = null;
       this.selectedMeshLandmarkName = null;
     }
   }
@@ -155,13 +205,16 @@ export class MeshManager {
     if (!meshLm) return;
 
     const lms = [
-      { name: 'chest_landmark', pos: meshLm.chest_landmark },
-      { name: 'hip_landmark', pos: meshLm.hip_landmark },
-      { name: 'narrow_waist_landmark', pos: meshLm.narrow_waist_landmark },
-    ];
+      { name: 'chest_landmark', raw: meshLm.chest_landmark },
+      { name: 'hip_landmark', raw: meshLm.hip_landmark },
+      { name: 'narrow_waist_landmark', raw: meshLm.narrow_waist_landmark },
+    ].filter((landmark) => landmark.raw);
 
     const vectors = lms.map(
-      (l) => new THREE.Vector3(l.pos.x, l.pos.y, l.pos.z),
+      (l) => {
+        const pos = this.extractLandmarkPosition(l.raw);
+        return new THREE.Vector3(pos.x, pos.y, pos.z);
+      },
     );
     const corrected = Utils3D.checkRayCastOnZAxis(this.scene, vectors);
 
@@ -170,6 +223,8 @@ export class MeshManager {
       name: l.name,
       originalPosition: corrected[i].clone(),
       position: corrected[i],
+      sliceData: this.deserializeLandmarkSlice(l.raw),
+      slicePreview: null,
     }));
 
     // Process pose landmarks
@@ -196,6 +251,8 @@ export class MeshManager {
         name: p.name,
         originalPosition: correctedPose[i].clone(),
         position: correctedPose[i],
+        sliceData: null,
+        slicePreview: null,
       }));
 
       this.setLandmarks({
@@ -230,6 +287,75 @@ export class MeshManager {
   get allMeshLandmarksSaved() {
     const meshLandmarks = this.landmarks['Mesh landmarks'];
     return meshLandmarks.length > 0 && this.unsavedMeshLandmarks.length === 0;
+  }
+
+  serializeLandmarkSlice(sliceData?: MeshSliceResult | null): SerializedLandmarkSlice | undefined {
+    if (!sliceData) {
+      return undefined;
+    }
+
+    return {
+      plane_y: sliceData.planeY,
+      contours: sliceData.contours.map((contour) =>
+        contour.map((point) => this.serializeVector3(point)),
+      ),
+      largest_contour: sliceData.largestContour.map((point) =>
+        this.serializeVector3(point),
+      ),
+    };
+  }
+
+  private extractLandmarkPosition(rawLandmark: any) {
+    if (
+      rawLandmark &&
+      typeof rawLandmark === 'object' &&
+      'x' in rawLandmark &&
+      'y' in rawLandmark &&
+      'z' in rawLandmark
+    ) {
+      return rawLandmark;
+    }
+
+    if (rawLandmark?.position) {
+      return rawLandmark.position;
+    }
+
+    return { x: 0, y: 0, z: 0 };
+  }
+
+  private deserializeLandmarkSlice(rawLandmark: any): MeshSliceResult | null {
+    const slice = rawLandmark?.slice;
+
+    if (!slice?.largest_contour?.length) {
+      return null;
+    }
+
+    return {
+      planeY: slice.plane_y ?? this.extractLandmarkPosition(rawLandmark).y,
+      contours: Array.isArray(slice.contours)
+        ? slice.contours.map((contour: SerializedSlicePoint[]) =>
+            contour.map((point) => this.deserializeVector3(point)),
+          )
+        : [],
+      largestContour: slice.largest_contour.map((point: SerializedSlicePoint) =>
+        this.deserializeVector3(point),
+      ),
+      sampledLargestContour: slice.largest_contour.map(
+        (point: SerializedSlicePoint) => this.deserializeVector3(point),
+      ),
+    };
+  }
+
+  private serializeVector3(point: THREE.Vector3): SerializedSlicePoint {
+    return {
+      x: point.x,
+      y: point.y,
+      z: point.z,
+    };
+  }
+
+  private deserializeVector3(point: SerializedSlicePoint) {
+    return new THREE.Vector3(point.x, point.y, point.z);
   }
 
   private updateSkirt() {

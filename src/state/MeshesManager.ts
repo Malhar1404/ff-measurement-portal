@@ -121,14 +121,16 @@ export class MeshesManager {
 
     const meshLandmarks = selected.landmarks['Mesh landmarks'].reduce(
       (acc, landmark) => {
+        const serializedSlice = selected.serializeLandmarkSlice(landmark.sliceData);
         acc[landmark.name] = {
           x: landmark.position.x,
           y: landmark.position.y,
           z: landmark.position.z,
+          ...(serializedSlice ? { slice: serializedSlice } : {}),
         };
         return acc;
       },
-      {} as Record<string, { x: number; y: number; z: number }>,
+      {} as Record<string, any>,
     );
 
     const exportData = {

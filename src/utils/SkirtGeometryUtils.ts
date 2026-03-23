@@ -1,11 +1,27 @@
 import * as THREE from 'three';
 import { MeshBVH } from 'three-mesh-bvh';
 
+export type MeshSliceResult = {
+  planeY: number;
+  contours: THREE.Vector3[][];
+  largestContour: THREE.Vector3[];
+  sampledLargestContour: THREE.Vector3[];
+};
+
 export class SkirtGeometryUtils {
   /* ===============================
      Slice mesh at Y using BVH + Contour Building (🔥 ADVANCED)
      =============================== */
   static sliceMeshAtY(mesh: THREE.Mesh, y: number): THREE.Vector3[] {
+    const sliceResult = this.sliceMeshContoursAtY(mesh, y);
+    return sliceResult?.sampledLargestContour ?? [];
+  }
+
+  static sliceMeshContoursAtY(
+    mesh: THREE.Mesh,
+    y: number,
+    sampleCount = 64,
+  ): MeshSliceResult | null {
     const geometry = mesh.geometry;
     
     // 🔥 Build BVH for fast intersection on the ORIGINAL geometry if missing
@@ -56,7 +72,7 @@ export class SkirtGeometryUtils {
       },
     });
 
-    if (segments.length === 0) return [];
+    if (segments.length === 0) return null;
 
     // 🔥 Convert Local segments back to World segments for consistent processing
     const worldSegments = segments.map(seg => [
@@ -66,7 +82,7 @@ export class SkirtGeometryUtils {
 
     // 🔥 Group segments into discrete islands (contours)
     const contourIslands = this.buildContoursFromSegmentsWithSegments(worldSegments);
-    if (contourIslands.length === 0) return [];
+    if (contourIslands.length === 0) return null;
 
     // 🔥 Select the "Main Body" (largest island by perimeter)
     const mainIsland = contourIslands.reduce((max, current) => 
@@ -75,9 +91,20 @@ export class SkirtGeometryUtils {
 
     // 🔥 Sample Outer Contour using segments ONLY from the main island
     const center = this.computeCenterXZFromSegments(mainIsland.segments);
-    const sampledPoints = this.sampleOuterContour(mainIsland.segments, center, 64);
+    const sampledPoints = this.sampleOuterContour(
+      mainIsland.segments,
+      center,
+      sampleCount,
+    );
 
-    return sampledPoints;
+    return {
+      planeY: y,
+      contours: contourIslands.map((island) =>
+        this.deduplicateContourPoints(island.points),
+      ),
+      largestContour: this.deduplicateContourPoints(mainIsland.points),
+      sampledLargestContour: sampledPoints,
+    };
   }
 
   /* ===============================
@@ -216,6 +243,34 @@ export class SkirtGeometryUtils {
         count += 2;
     }
     return c.divideScalar(count);
+  }
+
+  private static deduplicateContourPoints(points: THREE.Vector3[]) {
+    if (points.length === 0) {
+      return [];
+    }
+
+    const deduplicated: THREE.Vector3[] = [points[0].clone()];
+    const threshold = 1e-3;
+
+    for (let i = 1; i < points.length; i++) {
+      if (
+        points[i].distanceTo(deduplicated[deduplicated.length - 1]) >=
+        threshold
+      ) {
+        deduplicated.push(points[i].clone());
+      }
+    }
+
+    if (
+      deduplicated.length > 2 &&
+      deduplicated[0].distanceTo(deduplicated[deduplicated.length - 1]) <
+        threshold
+    ) {
+      deduplicated.pop();
+    }
+
+    return deduplicated;
   }
 
   /* ===============================

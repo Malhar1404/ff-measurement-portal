@@ -1,3 +1,4 @@
+import { Line } from '@react-three/drei';
 import { useThree } from '@react-three/fiber';
 import { observer } from 'mobx-react-lite';
 import * as THREE from 'three';
@@ -14,6 +15,16 @@ export const GlbViewer = observer(() => {
   const selectedModel = meshesManager.selectedModel;
   const meshPoints = selectedModel?.landmarks['Mesh landmarks'] || [];
   const defaultMeshPointColor = 'yellow';
+  const leftGuideLength = (() => {
+    if (!selectedModel) {
+      return 12;
+    }
+
+    const size = new THREE.Box3().setFromObject(selectedModel.scene).getSize(
+      new THREE.Vector3(),
+    );
+    return size.x / 2 + 1;
+  })();
 
   return (
     <group>
@@ -53,6 +64,7 @@ export const GlbViewer = observer(() => {
           defaultMeshPointColor={defaultMeshPointColor}
           handleLandmarkClick={handleLandmarkClick}
           handleLandmarkPointerDown={handleLandmarkPointerDown}
+          leftGuideLength={leftGuideLength}
           isSelected={selectedModel?.selectedMeshLandmarkName === point.name}
           point={point}
         />
@@ -65,26 +77,67 @@ const LandmarkPoint = observer(({
   defaultMeshPointColor,
   handleLandmarkClick,
   handleLandmarkPointerDown,
+  leftGuideLength,
   isSelected,
   point,
 }: {
   defaultMeshPointColor: string;
   handleLandmarkClick: (event: any, landmarkName: string) => void;
   handleLandmarkPointerDown: (event: any, landmarkName: string) => void;
+  leftGuideLength: number;
   isSelected: boolean;
   point: {
     color?: string;
     name: string;
     originalPosition?: THREE.Vector3;
     position: THREE.Vector3;
+    sliceData?: {
+      largestContour: THREE.Vector3[];
+    } | null;
+    slicePreview?: {
+      largestContour: THREE.Vector3[];
+    } | null;
   };
 }) => {
   const originalPosition = point.originalPosition ?? point.position;
   const hasMoved = originalPosition.distanceToSquared(point.position) > 0.0001;
   const connectorPoints = [originalPosition, point.position];
+  const activeContour =
+    point.slicePreview?.largestContour ?? point.sliceData?.largestContour ?? [];
+  const contourLinePoints =
+    activeContour.length > 2 ? [...activeContour, activeContour[0]] : activeContour;
+  const controlColor = '#123c8b';
+  const controlAccentColor = '#0a2a66';
+  const handlePosition = new THREE.Vector3(
+    point.position.x - leftGuideLength,
+    point.position.y,
+    point.position.z,
+  );
+  const guideLinePoints = [
+    new THREE.Vector3(
+      point.position.x,
+      point.position.y,
+      point.position.z,
+    ),
+    new THREE.Vector3(
+      handlePosition.x,
+      handlePosition.y,
+      handlePosition.z,
+    ),
+  ];
 
   return (
     <group>
+      {isSelected && contourLinePoints.length > 1 && (
+        <Line
+          points={contourLinePoints}
+          color="#6df0ff"
+          depthTest={false}
+          lineWidth={2.2}
+          renderOrder={998}
+        />
+      )}
+
       {(hasMoved || isSelected) && (
         <mesh
           raycast={() => null}
@@ -105,26 +158,23 @@ const LandmarkPoint = observer(({
       )}
 
       {isSelected && hasMoved && (
-        <line >
-          <bufferGeometry>
-            <bufferAttribute
-              attach="attributes-position"
-              args={[
-                new Float32Array(
-                  connectorPoints.flatMap((vector) => [vector.x, vector.y, vector.z]),
-                ),
-                3,
-              ]}
-            />
-          </bufferGeometry>
-          <lineBasicMaterial
-            color="#e8ff68"
-            depthTest={false}
-            linewidth={5}
-            transparent
-            opacity={1}
-          />
-        </line>
+        <Line
+          points={connectorPoints}
+          color="#e8ff68"
+          depthTest={false}
+          lineWidth={2}
+          renderOrder={999}
+        />
+      )}
+
+      {isSelected && (
+        <Line
+          points={guideLinePoints}
+          color={controlColor}
+          depthTest={false}
+          lineWidth={2.6}
+          renderOrder={999}
+        />
       )}
 
       <mesh
@@ -143,6 +193,80 @@ const LandmarkPoint = observer(({
           emissiveIntensity={isSelected ? 0.35 : 0}
         />
       </mesh>
+
+      {isSelected && (
+        <mesh
+          position={[
+            handlePosition.x,
+            handlePosition.y,
+            handlePosition.z,
+          ]}
+          onPointerDown={(e: any) => handleLandmarkPointerDown(e, point.name)}>
+          <boxGeometry args={[4.2, 1.8, 0.75]} />
+          <meshStandardMaterial
+            color={controlColor}
+            emissive={controlAccentColor}
+            emissiveIntensity={0.35}
+            transparent
+            opacity={0.98}
+            depthTest={false}
+          />
+        </mesh>
+      )}
+
+      {isSelected && (
+        <mesh
+          position={[
+            handlePosition.x - 1.1,
+            handlePosition.y,
+            handlePosition.z + 0.01,
+          ]}
+          onPointerDown={(e: any) => handleLandmarkPointerDown(e, point.name)}>
+          <boxGeometry args={[0.28, 1.05, 0.1]} />
+          <meshStandardMaterial
+            color="#dbeafe"
+            transparent
+            opacity={0.95}
+            depthTest={false}
+          />
+        </mesh>
+      )}
+
+      {isSelected && (
+        <mesh
+          position={[
+            handlePosition.x,
+            handlePosition.y,
+            handlePosition.z + 0.01,
+          ]}
+          onPointerDown={(e: any) => handleLandmarkPointerDown(e, point.name)}>
+          <boxGeometry args={[0.28, 1.05, 0.1]} />
+          <meshStandardMaterial
+            color="#dbeafe"
+            transparent
+            opacity={0.95}
+            depthTest={false}
+          />
+        </mesh>
+      )}
+
+      {isSelected && (
+        <mesh
+          position={[
+            handlePosition.x + 1.1,
+            handlePosition.y,
+            handlePosition.z + 0.01,
+          ]}
+          onPointerDown={(e: any) => handleLandmarkPointerDown(e, point.name)}>
+          <boxGeometry args={[0.28, 1.05, 0.1]} />
+          <meshStandardMaterial
+            color="#dbeafe"
+            transparent
+            opacity={0.95}
+            depthTest={false}
+          />
+        </mesh>
+      )}
     </group>
   );
 });

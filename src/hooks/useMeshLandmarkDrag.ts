@@ -4,6 +4,8 @@ import * as THREE from 'three';
 
 import { useMainContext } from './useMainContext';
 import { ThreeEvent } from '@react-three/fiber/dist/declarations/src/core/events';
+import { SkirtGeometryUtils } from '../utils/SkirtGeometryUtils';
+import { Utils3D } from '../utils/Utils3D';
 
 type UseMeshLandmarkDragParams = {
   camera: THREE.Camera;
@@ -22,53 +24,46 @@ export const useMeshLandmarkDrag = ({
   const suppressClickRef = useRef(false);
   const cameraEnabledRef = useRef(true);
   const hasDraggedRef = useRef(false);
+  const dragPlaneRef = useRef(new THREE.Plane());
+  const dragPointRef = useRef(new THREE.Vector3());
+
+  const computeSliceForLandmark = (landmarkName: string) => {
+    const selectedModel = meshesManager.selectedModel;
+    const mesh = selectedModel?.getPrimaryMesh();
+    const landmark = selectedModel?.landmarks['Mesh landmarks'].find(
+      (item) => item.name === landmarkName,
+    );
+
+    if (!selectedModel || !mesh || !landmark) {
+      return null;
+    }
+
+    mesh.updateWorldMatrix(true, true);
+    return SkirtGeometryUtils.sliceMeshContoursAtY(mesh, landmark.position.y);
+  };
 
   useEffect(() => {
-    const getIntersectedPointOnMesh = (
-      event: PointerEvent,
-    ): THREE.Vector3 | null => {
-      const selectedModel = meshesManager.selectedModel;
-
-      if (!selectedModel) {
-        return null;
-      }
-
+    const getPointerOnDragPlane = (event: PointerEvent): THREE.Vector3 | null => {
       const rect = gl.domElement.getBoundingClientRect();
       const pointer = new THREE.Vector2(
         ((event.clientX - rect.left) / rect.width) * 2 - 1,
         -((event.clientY - rect.top) / rect.height) * 2 + 1,
       );
 
-      const meshes: THREE.Mesh[] = [];
-      const originalSides = new Map<THREE.Material, THREE.Side>();
-
-      selectedModel.scene.traverse((obj) => {
-        if (!(obj instanceof THREE.Mesh)) {
-          return;
-        }
-
-        meshes.push(obj);
-
-        const materials = Array.isArray(obj.material)
-          ? obj.material
-          : [obj.material];
-
-        materials.forEach((mat) => {
-          if (mat && mat instanceof THREE.Material && !originalSides.has(mat)) {
-            originalSides.set(mat, mat.side);
-            mat.side = THREE.DoubleSide;
-          }
-        });
-      });
-
       raycaster.setFromCamera(pointer, camera);
-      const intersections = raycaster.intersectObjects(meshes, false);
+      return raycaster.ray.intersectPlane(dragPlaneRef.current, dragPointRef.current)
+        ? dragPointRef.current.clone()
+        : null;
+    };
 
-      originalSides.forEach((side, mat) => {
-        mat.side = side;
-      });
-
-      return intersections[0]?.point.clone() ?? null;
+    const projectPointToMesh = (
+      selectedModel: NonNullable<typeof meshesManager.selectedModel>,
+      targetPoint: THREE.Vector3,
+    ) => {
+      const [projectedPoint] = Utils3D.checkRayCastOnZAxis(selectedModel.scene, [
+        targetPoint,
+      ]);
+      return projectedPoint ?? targetPoint;
     };
 
     const handlePointerMove = (event: PointerEvent) => {
@@ -79,20 +74,52 @@ export const useMeshLandmarkDrag = ({
         return;
       }
 
-      const pointOnMesh = getIntersectedPointOnMesh(event);
+      const pointOnDragPlane = getPointerOnDragPlane(event);
 
-      if (!pointOnMesh) {
+      if (!pointOnDragPlane) {
         return;
       }
 
-      selectedModel.updateMeshLandmarkPosition(landmarkName, pointOnMesh);
+      const activeLandmark = selectedModel.landmarks['Mesh landmarks'].find(
+        (item) => item.name === landmarkName,
+      );
+
+      if (!activeLandmark) {
+        return;
+      }
+
+      selectedModel.updateMeshLandmarkPosition(
+        landmarkName,
+        projectPointToMesh(
+          selectedModel,
+          new THREE.Vector3(
+          activeLandmark.position.x,
+          pointOnDragPlane.y,
+          activeLandmark.position.z,
+        ),
+        ),
+      );
+      selectedModel.updateMeshLandmarkSlicePreview(
+        landmarkName,
+        computeSliceForLandmark(landmarkName),
+      );
       hasDraggedRef.current = true;
       suppressClickRef.current = true;
     };
 
     const handlePointerUp = () => {
-      if (!draggedLandmarkNameRef.current) {
+      const landmarkName = draggedLandmarkNameRef.current;
+
+      if (!landmarkName) {
         return;
+      }
+
+      const selectedModel = meshesManager.selectedModel;
+      if (selectedModel) {
+        selectedModel.commitMeshLandmarkSlice(
+          landmarkName,
+          computeSliceForLandmark(landmarkName),
+        );
       }
 
       draggedLandmarkNameRef.current = null;
@@ -129,9 +156,26 @@ export const useMeshLandmarkDrag = ({
       return;
     }
 
+    const activeLandmark = selectedModel.landmarks['Mesh landmarks'].find(
+      (item) => item.name === landmarkName,
+    );
+
+    if (!activeLandmark) {
+      return;
+    }
+
     draggedLandmarkNameRef.current = landmarkName;
     suppressClickRef.current = false;
     hasDraggedRef.current = false;
+
+    const dragAnchor = activeLandmark.position.clone();
+    const normal = camera.position.clone().sub(dragAnchor).normalize();
+    dragPlaneRef.current.setFromNormalAndCoplanarPoint(normal, dragAnchor);
+
+    selectedModel.updateMeshLandmarkSlicePreview(
+      landmarkName,
+      computeSliceForLandmark(landmarkName),
+    );
 
     if (cameraManager.cameraRef) {
       cameraEnabledRef.current = cameraManager.cameraRef.enabled ?? true;
