@@ -21,15 +21,19 @@ export const GlbViewer = observer(() => {
   const selectedModel = meshesManager.selectedModel;
   const meshPoints = selectedModel?.landmarks['Mesh landmarks'] || [];
   const defaultMeshPointColor = 'yellow';
-  const leftGuideLength = (() => {
+  const { leftGuideLength, bbCenterX, bbCenterZ } = (() => {
     if (!selectedModel) {
-      return 12;
+      return { leftGuideLength: 12, bbCenterX: 0, bbCenterZ: 0 };
     }
 
-    const size = new THREE.Box3().setFromObject(selectedModel.scene).getSize(
-      new THREE.Vector3(),
-    );
-    return size.x / 2 + 1;
+    const bb = new THREE.Box3().setFromObject(selectedModel.scene);
+    const size = bb.getSize(new THREE.Vector3());
+    const center = bb.getCenter(new THREE.Vector3());
+    return {
+      leftGuideLength: size.x / 2 + 1,
+      bbCenterX: center.x,
+      bbCenterZ: center.z,
+    };
   })();
 
   return (
@@ -71,6 +75,8 @@ export const GlbViewer = observer(() => {
           handleLandmarkClick={handleLandmarkClick}
           handleLandmarkPointerDown={handleLandmarkPointerDown}
           leftGuideLength={leftGuideLength}
+          bbCenterX={bbCenterX}
+          bbCenterZ={bbCenterZ}
           isSelected={selectedModel?.selectedMeshLandmarkName === point.name}
           point={point}
         />
@@ -84,6 +90,8 @@ const LandmarkPoint = observer(({
   handleLandmarkClick,
   handleLandmarkPointerDown,
   leftGuideLength,
+  bbCenterX,
+  bbCenterZ,
   isSelected,
   point,
 }: {
@@ -91,6 +99,8 @@ const LandmarkPoint = observer(({
   handleLandmarkClick: (event: any, landmarkName: string) => void;
   handleLandmarkPointerDown: (event: any, landmarkName: string) => void;
   leftGuideLength: number;
+  bbCenterX: number;
+  bbCenterZ: number;
   isSelected: boolean;
   point: {
     color?: string;
@@ -124,16 +134,17 @@ const LandmarkPoint = observer(({
   const controlColor = isSelected ? '#1d4ed8' : '#123c8b';
   const controlAccentColor = isSelected ? '#1e40af' : '#0a2a66';
   const grooveColor = isSelected ? '#dbeafe' : '#bfdbfe';
+  // Handle is always at BB center X offset to the left, fixed Z = BB center Z
   const handlePosition = new THREE.Vector3(
-    point.position.x - leftGuideLength,
+    bbCenterX - leftGuideLength,
     point.position.y,
-    point.position.z,
+    bbCenterZ,
   );
   const guideLinePoints = [
     new THREE.Vector3(
-      point.position.x,
-      point.position.y,
-      point.position.z,
+      bbCenterX,       // fixed: BB center X
+      point.position.y, // only Y changes
+      bbCenterZ,        // fixed: BB center Z
     ),
     new THREE.Vector3(
       handlePosition.x,
@@ -150,7 +161,7 @@ const LandmarkPoint = observer(({
           color="#8b949e"
           depthTest={false}
           lineWidth={1.9}
-          renderOrder={997}
+          renderOrder={0}
         />
       )}
 
@@ -160,7 +171,7 @@ const LandmarkPoint = observer(({
           color="#6df0ff"
           depthTest={false}
           lineWidth={2.2}
-          renderOrder={998}
+          renderOrder={0}
         />
       )}
 
@@ -189,7 +200,7 @@ const LandmarkPoint = observer(({
           color="#e8ff68"
           depthTest={false}
           lineWidth={2}
-          renderOrder={999}
+          renderOrder={0}
         />
       )}
 
@@ -199,7 +210,7 @@ const LandmarkPoint = observer(({
           color={controlColor}
           depthTest={false}
           lineWidth={2.6}
-          renderOrder={999}
+          renderOrder={0}
         />
       )}
 
