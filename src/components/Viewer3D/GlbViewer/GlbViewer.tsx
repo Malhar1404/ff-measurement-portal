@@ -1,11 +1,14 @@
 import { observer } from 'mobx-react-lite';
 import * as THREE from 'three';
 
+import { useMeshLandmarkDrag } from '../../../hooks/useMeshLandmarkDrag';
 import { useMainContext } from '../../../hooks/useMainContext';
 import SkirtMesh from '../../SkirtCreation/SkirtMesh';
 
 export const GlbViewer = observer(() => {
   const { meshesManager } = useMainContext();
+  const { handleLandmarkClick, handleLandmarkPointerDown } =
+    useMeshLandmarkDrag();
   const selectedModel = meshesManager.selectedModel;
   const meshPoints = selectedModel?.landmarks['Mesh landmarks'] || [];
   const defaultMeshPointColor = 'yellow';
@@ -55,10 +58,8 @@ export const GlbViewer = observer(() => {
               ? [1.35, 1.35, 1.35]
               : [1, 1, 1]
           }
-          onClick={(e: any) => {
-            e.stopPropagation();
-            selectedModel?.toggleMeshLandmarkSelection(point.name);
-          }}>
+          onPointerDown={(e: any) => handleLandmarkPointerDown(e, point.name)}
+          onClick={(e: any) => handleLandmarkClick(e, point.name)}>
           <sphereGeometry args={[1, 24, 24]} />
           <meshStandardMaterial
             color={point.color || defaultMeshPointColor}

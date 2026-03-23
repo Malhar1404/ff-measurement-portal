@@ -80,6 +80,22 @@ export class MeshManager {
     this.images = images;
   }
 
+  updateMeshLandmarkPosition(
+    landmarkName: string,
+    position: THREE.Vector3,
+  ) {
+    const landmark = this.landmarks['Mesh landmarks'].find(
+      (item) => item.name === landmarkName,
+    );
+
+    if (!landmark) {
+      return;
+    }
+
+    landmark.position = position.clone();
+    this.updateSkirt();
+  }
+
   toggleMeshLandmarkSelection(landmarkName: string) {
     this.selectedMeshLandmarkName =
       this.selectedMeshLandmarkName === landmarkName ? null : landmarkName;
