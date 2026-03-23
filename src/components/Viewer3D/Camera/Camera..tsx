@@ -1,4 +1,5 @@
 import { CameraControls } from '@react-three/drei';
+import CameraControlsImpl from 'camera-controls';
 import { observer } from 'mobx-react-lite';
 
 import { useMainContext } from '../../../hooks/useMainContext';
@@ -9,10 +10,17 @@ export const Camera = observer(() => {
   return (
     <CameraControls
       makeDefault
-      // minPolarAngle={Math.PI / 2}
-      // maxPolarAngle={Math.PI / 2}
-      // minDistance={0.5}
-      // maxDistance={2}
+      mouseButtons={{
+        left: CameraControlsImpl.ACTION.ROTATE,
+        middle: CameraControlsImpl.ACTION.DOLLY,
+        right: CameraControlsImpl.ACTION.NONE,
+        wheel: CameraControlsImpl.ACTION.DOLLY,
+      }}
+      touches={{
+        one: CameraControlsImpl.ACTION.TOUCH_ROTATE,
+        two: CameraControlsImpl.ACTION.TOUCH_DOLLY_ROTATE,
+        three: CameraControlsImpl.ACTION.NONE,
+      }}
       ref={(camera) => {
         if (camera) {
           cameraManager.setCameraRef(camera);

@@ -32,6 +32,10 @@ export class MeshesManager {
 
   setSelectedModelId(id: string | null) {
     this.selectedModelId = id;
+
+    if (id && this._models.has(id)) {
+      this._libState.cameraManager.focusCameraTo([this._models.get(id)!.scene]);
+    }
   }
 
   get selectedModel(): MeshManager | null {
@@ -226,9 +230,9 @@ export class MeshesManager {
       // 🔥 Auto-select first model if none selected
       if (!this.selectedModelId) {
         this.setSelectedModelId(scene.uuid);
+      } else if (this.selectedModelId === scene.uuid) {
+        this._libState.cameraManager.focusCameraTo([scene]);
       }
-
-      this._libState.cameraManager.focusCameraTo([scene]);
       return scene.uuid;
     } catch (error) {
       console.error('[MeshesManager] Failed to load GLB:', error);
