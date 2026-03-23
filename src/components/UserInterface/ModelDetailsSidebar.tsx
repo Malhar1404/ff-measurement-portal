@@ -1,9 +1,4 @@
-import {
-  EditOutlined,
-  SaveOutlined,
-  Collections,
-  EditLocationAlt,
-} from '@mui/icons-material';
+import { EditOutlined, SaveOutlined, Collections, EditLocationAlt } from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -20,17 +15,11 @@ import { useMainContext } from '../../hooks/useMainContext';
 type SidebarTab = 'landmarks' | 'images';
 type LandmarkCoordinate = 'x' | 'y' | 'z';
 
-const IMAGE_SLOTS = [
-  { key: 'front', label: 'Front View' },
-  { key: 'back', label: 'Back View' },
-  { key: 'left', label: 'Left View' },
-  { key: 'right', label: 'Right View' },
-] as const;
-
 export const ModelDetailsSidebar = observer(() => {
   const { meshesManager } = useMainContext();
   const selectedModel = meshesManager.selectedModel;
   const meshLandmarks = selectedModel?.landmarks['Mesh landmarks'] || [];
+  const modelImages = selectedModel?.images || [];
 
   const [activeTab, setActiveTab] = useState<SidebarTab>('landmarks');
 
@@ -241,51 +230,53 @@ export const ModelDetailsSidebar = observer(() => {
               )}
             </Box>
           ) : (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-              {IMAGE_SLOTS.map((slot) => (
+            <Box
+              sx={{
+                display: 'grid',
+                gap: 1,
+                gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+              }}>
+              {modelImages.length === 0 ? (
                 <Box
-                  key={slot.key}
                   sx={{
                     backgroundColor: '#ffffff',
                     border: '1px solid #e0e0e0',
                     borderRadius: 2,
                     boxShadow: '0 2px 8px rgba(15, 23, 42, 0.06)',
-                    overflow: 'hidden',
+                    gridColumn: '1 / -1',
+                    p: 2,
+                    textAlign: 'center',
                   }}>
-                  <Box
-                    sx={{
-                      alignItems: 'center',
-                      background:
-                        'linear-gradient(135deg, rgba(25,118,210,0.12), rgba(33,150,243,0.04))',
-                      borderBottom: '1px solid #e3f2fd',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      px: 1.2,
-                      py: 0.8,
-                    }}>
-                    <Typography sx={{ color: '#2c3e50', fontSize: '0.84rem', fontWeight: 700 }} variant="body2">
-                      {slot.label}
-                    </Typography>
-                    
-                  </Box>
-
-                  <Box
-                    sx={{
-                      alignItems: 'center',
-                      aspectRatio: '16 / 10',
-                      background:
-                        'repeating-linear-gradient(135deg, #f8f9fa, #f8f9fa 12px, #eef3f8 12px, #eef3f8 24px)',
-                      color: '#607d8b',
-                      display: 'flex',
-                      justifyContent: 'center',
-                      px: 1.5,
-                    }}>
-                    <Typography sx={{ fontSize: '0.8rem', textAlign: 'center' }} variant="body2">
-                      Image preview area for {slot.label.toLowerCase()}
-                    </Typography>
-                  </Box>
+                  <Typography color="text.secondary" variant="body2">
+                    No images available
+                  </Typography>
                 </Box>
-              ))}
+              ) : (
+                modelImages.map((imagePath, index) => (
+                  <Box
+                    key={`${imagePath}-${index}`}
+                    sx={{
+                      aspectRatio: '4 / 5',
+                      backgroundColor: '#ffffff',
+                      border: '1px solid #e0e0e0',
+                      borderRadius: 2,
+                      boxShadow: '0 2px 8px rgba(15, 23, 42, 0.06)',
+                      overflow: 'hidden',
+                    }}>
+                    <Box
+                      component="img"
+                      src={imagePath}
+                      alt={`${selectedModel?.fileName || 'model'} image ${index + 1}`}
+                      sx={{
+                        display: 'block',
+                        height: '100%',
+                        objectFit: 'cover',
+                        width: '100%',
+                      }}
+                    />
+                  </Box>
+                ))
+              )}
             </Box>
           )}
         </Box>

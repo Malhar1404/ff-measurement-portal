@@ -1,6 +1,7 @@
 import { makeAutoObservable, ObservableMap, reaction } from 'mobx';
 import * as THREE from 'three';
 
+import { APP_CONFIG } from '../config/appConfig';
 import cachedLandmarks from '../config/predefinedLandmarks.json';
 import { Utils3D } from '../utils/Utils3D';
 import { LandmarkType, MeshManager } from './MeshManager';
@@ -156,6 +157,15 @@ export class MeshesManager {
     }
   }
 
+  loadImagesFromConfig(model: MeshManager) {
+    const fileName = model.fileName;
+    if (!fileName) return;
+
+    const baseName = fileName.split('.')[0];
+    const imagePaths = APP_CONFIG.modelImages[baseName] || [];
+    model.setImages(imagePaths);
+  }
+
   /* ===============================
      GLB LOADING
      =============================== */
@@ -185,6 +195,7 @@ export class MeshesManager {
         category,
       );
       this._models.set(scene.uuid, model);
+      this.loadImagesFromConfig(model);
 
       // 🔥 AUTO-LOAD: Check if we have cached landmarks for this file
       if (loadStaticLandmarks) {

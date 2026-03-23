@@ -18,5 +18,13 @@ export const APP_CONFIG = {
            "/models/Jazzlynn.glb",
            "/models/Mila.glb"
         ] as string[]
-    }
+    },
+    modelImages: {
+        Amelia: [
+            "/images/Amelia/Amelia-A_01.jpeg",
+            "/images/Amelia/Amelia-A_02.jpeg",
+            "/images/Amelia/Amelia-A_05.jpeg",
+            "/images/Amelia/Amelia-A_08.jpeg",
+        ],
+    } as Record<string, string[]>
 };

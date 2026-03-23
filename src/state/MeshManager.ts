@@ -23,6 +23,7 @@ export class MeshManager {
   fileName?: string;
   blobUrl: string;
   category: 'adult' | 'kid' = 'adult';
+  images: string[] = [];
 
   // Data isolation
   landmarks: LandmarkType = {
@@ -72,6 +73,10 @@ export class MeshManager {
 
   setMeasurementResponse(response: any) {
     this.measurementResponse = response;
+  }
+
+  setImages(images: string[]) {
+    this.images = images;
   }
 
   processLandmarkResponse(data: any) {
