@@ -1,9 +1,12 @@
 import {
+  EditOutlined,
+  SaveOutlined,
   Collections,
   EditLocationAlt,
 } from '@mui/icons-material';
 import {
   Box,
+  Button,
   Chip,
   Paper,
   Tab,
@@ -80,14 +83,14 @@ export const ModelDetailsSidebar = observer(() => {
             backgroundColor: '#f8f9fa',
             borderBottom: '2px solid #e0e0e0',
             display: 'flex',
-            p: 2,
+            p: 1.5,
           }}>
-          <Box sx={{ alignItems: 'center', display: 'flex', gap: 2 }}>
+          <Box sx={{ alignItems: 'center', display: 'flex', gap: 1.25 }}>
             <Typography
               variant="h6"
               sx={{
                 color: '#2c3e50',
-                fontSize: '1.1rem',
+                fontSize: '1rem',
                 fontWeight: 'bold',
               }}>
               Model Details
@@ -134,29 +137,24 @@ export const ModelDetailsSidebar = observer(() => {
             display: 'flex',
             flex: 1,
             flexDirection: 'column',
-            gap: 1.5,
+            gap: 1,
             overflow: 'auto',
-            p: 2,
+            p: 1.5,
           }}>
           <Box
             sx={{
               backgroundColor: '#f8f9fa',
               border: '1px solid #e3f2fd',
               borderRadius: 2,
-              p: 1.5,
+              p: 1.2,
             }}>
             <Typography sx={{ color: '#2c3e50', fontWeight: 700 }} variant="body2">
               {selectedModel?.fileName || 'No model selected'}
             </Typography>
-            <Typography sx={{ color: '#607d8b', mt: 0.5 }} variant="caption">
-              {activeTab === 'landmarks'
-                ? 'Showing selected model landmark values.'
-                : 'UI-only image placeholders for now.'}
-            </Typography>
           </Box>
 
           {activeTab === 'landmarks' ? (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
               {landmarkRows.map(({ label, landmark }) => (
                 <Box
                   key={label}
@@ -165,31 +163,76 @@ export const ModelDetailsSidebar = observer(() => {
                     border: '1px solid #e0e0e0',
                     borderRadius: 2,
                     boxShadow: '0 2px 8px rgba(15, 23, 42, 0.06)',
-                    p: 1.5,
+                    p: 1.2,
                   }}>
-                  <Typography
-                    sx={{ color: '#2c3e50', fontSize: '0.95rem', fontWeight: 700, mb: 1.25 }}
-                    variant="body2">
-                    {label}
-                  </Typography>
+                  <Box
+                    sx={{
+                      alignItems: 'center',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      gap: 0.75,
+                      mb: 0.9,
+                    }}>
+                    <Typography
+                      sx={{ color: '#2c3e50', fontSize: '0.88rem', fontWeight: 700 }}
+                      variant="body2">
+                      {label}
+                    </Typography>
 
-                  <Box sx={{ display: 'grid', gap: 1, gridTemplateColumns: 'repeat(3, 1fr)' }}>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        gap: 0.6,
+                        justifyContent: 'flex-end',
+                      }}>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        sx={{
+                          borderRadius: 2,
+                          fontSize: '0.7rem',
+                          minWidth: 0,
+                          px: 0.75,
+                          py: 0.25,
+                          textTransform: 'none',
+                        }}>
+                        <EditOutlined sx={{ fontSize: '0.95rem' }} />
+                      </Button>
+                      <Button
+                        size="small"
+                        variant="contained"
+                        sx={{
+                          borderRadius: 2,
+                          boxShadow: 'none',
+                          fontSize: '0.7rem',
+                          minWidth: 0,
+                          minHeight: 0,
+                          px: 0.75,
+                          py: 0.25,
+                          textTransform: 'none',
+                        }}>
+                        <SaveOutlined sx={{ fontSize: '0.95rem' }} />
+                      </Button>
+                    </Box>
+                  </Box>
+
+                  <Box sx={{ display: 'grid', gap: 0.75, gridTemplateColumns: 'repeat(3, 1fr)' }}>
                     {(['x', 'y', 'z'] as LandmarkCoordinate[]).map((coordinate) => (
                       <Box
                         key={coordinate}
                         sx={{
                           backgroundColor: '#f8f9fa',
                           borderRadius: 1.5,
-                          px: 1,
-                          py: 1,
+                          px: 0.85,
+                          py: 0.8,
                         }}>
                         <Typography
-                          sx={{ color: '#6b7280', fontSize: '0.72rem' }}
+                          sx={{ color: '#6b7280', fontSize: '0.66rem' }}
                           variant="caption">
                           {coordinate.toUpperCase()}
                         </Typography>
                         <Typography
-                          sx={{ color: '#1f2937', fontSize: '0.86rem', fontWeight: 600 }}
+                          sx={{ color: '#1f2937', fontSize: '0.8rem', fontWeight: 600 }}
                           variant="body2">
                           {formatCoordinate(landmark?.position[coordinate])}
                         </Typography>
@@ -200,7 +243,7 @@ export const ModelDetailsSidebar = observer(() => {
               ))}
             </Box>
           ) : (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
               {IMAGE_SLOTS.map((slot) => (
                 <Box
                   key={slot.key}
@@ -219,10 +262,10 @@ export const ModelDetailsSidebar = observer(() => {
                       borderBottom: '1px solid #e3f2fd',
                       display: 'flex',
                       justifyContent: 'space-between',
-                      px: 1.5,
-                      py: 1,
+                      px: 1.2,
+                      py: 0.8,
                     }}>
-                    <Typography sx={{ color: '#2c3e50', fontWeight: 700 }} variant="body2">
+                    <Typography sx={{ color: '#2c3e50', fontSize: '0.84rem', fontWeight: 700 }} variant="body2">
                       {slot.label}
                     </Typography>
                     <Chip
@@ -245,9 +288,9 @@ export const ModelDetailsSidebar = observer(() => {
                       color: '#607d8b',
                       display: 'flex',
                       justifyContent: 'center',
-                      px: 2,
+                      px: 1.5,
                     }}>
-                    <Typography sx={{ textAlign: 'center' }} variant="body2">
+                    <Typography sx={{ fontSize: '0.8rem', textAlign: 'center' }} variant="body2">
                       Image preview area for {slot.label.toLowerCase()}
                     </Typography>
                   </Box>

@@ -95,31 +95,6 @@ export const UiComp = observer(() => {
           position: 'relative',
           overflow: 'hidden'
         }}>
-        
-        {/* Run Test Button - Floating on the right */}
-        <Button
-          variant="contained"
-          startIcon={<PlayArrow />}
-          onClick={handleRunTest}
-          sx={{
-            position: 'absolute',
-            top: 20,
-            right: 20, // Offset to stay clear of the logger when open
-            zIndex: 1100,
-            '&:hover': {
-              backgroundColor: '#43a047',
-              transform: 'scale(1.05)',
-            },
-            backgroundColor: '#4caf50',
-            borderRadius: 2,
-            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-            fontWeight: 'bold',
-            px: 3,
-            py: 1.5,
-            transition: 'all 0.2s ease',
-          }}>
-          Run Test
-        </Button>
 
         {/* 3D Viewer Area */}
         <Box
