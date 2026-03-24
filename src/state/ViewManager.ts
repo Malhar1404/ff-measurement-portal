@@ -20,6 +20,7 @@ export class ViewManager {
   private _activeCategoryTab: 'adult' | 'kid' = 'adult';
   private _isInitialLoading = false;
   private _modelComment = ''
+  private _comparisonImage: string | null = null;
 
   constructor(libState: StateManager) {
     this._libState = libState;
@@ -122,5 +123,13 @@ export class ViewManager {
   }
   get modelComment() {
     return this._modelComment;
+  }
+
+  get comparisonImage() {
+    return this._comparisonImage;
+  }
+
+  setComparisonImage(imageUrl: string | null) {
+    this._comparisonImage = imageUrl;
   }
 }

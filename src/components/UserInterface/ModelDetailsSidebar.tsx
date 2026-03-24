@@ -34,7 +34,6 @@ export const ModelDetailsSidebar = observer(() => {
   const selectedLandmarkName = selectedModel?.selectedMeshLandmarkName ?? null;
 
   const [activeTab, setActiveTab] = useState<SidebarTab>('landmarks');
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   const handleTabChange = (_event: SyntheticEvent, value: SidebarTab) => {
     setActiveTab(value);
@@ -342,7 +341,7 @@ export const ModelDetailsSidebar = observer(() => {
                     <img
                       src={imagePath}
                       alt={`${selectedModel?.fileName || 'model'} image ${index + 1}`}
-                      onClick={() => setPreviewImage(imagePath)}
+                      onClick={() => viewManager.setComparisonImage(imagePath)}
                       style={{
                         display: 'block',
                         height: '100%',
@@ -424,50 +423,6 @@ export const ModelDetailsSidebar = observer(() => {
         ) : null}
       </Paper>
 
-      <Dialog
-        open={Boolean(previewImage)}
-        onClose={() => setPreviewImage(null)}
-        maxWidth={false}
-        PaperProps={{
-          sx: {
-            backgroundColor: 'transparent',
-            backgroundImage: 'none',
-            boxShadow: 'none',
-            overflow: 'visible',
-          },
-        }}
-        slotProps={{
-          backdrop: {
-            sx: {
-              backdropFilter: 'blur(14px)',
-              backgroundColor: 'rgba(15, 23, 42, 0.5)',
-            },
-          },
-        }}>
-        {previewImage ? (
-          <Box
-            sx={{
-              alignItems: 'center',
-              display: 'flex',
-              justifyContent: 'center',
-              maxHeight: '90vh',
-              maxWidth: '90vw',
-            }}>
-            <img
-              src={previewImage}
-              alt={`${selectedModel?.fileName || 'model'} preview`}
-              style={{
-                borderRadius: 3,
-                boxShadow: '0 24px 60px rgba(0, 0, 0, 0.35)',
-                display: 'block',
-                maxHeight: '90vh',
-                maxWidth: '90vw',
-                objectFit: 'contain',
-              }}
-            />
-          </Box>
-        ) : null}
-      </Dialog>
     </Box>
   );
 });

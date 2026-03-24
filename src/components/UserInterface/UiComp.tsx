@@ -1,5 +1,6 @@
-import { Backdrop, Box, CircularProgress, CssBaseline, Stack, Typography } from '@mui/material';
+import { Backdrop, Box, CircularProgress, CssBaseline, Stack, Typography, IconButton } from '@mui/material';
 import { Theme } from '@mui/material/styles';
+import { Close } from '@mui/icons-material';
 import { observer } from 'mobx-react-lite';
 import { useEffect, useRef, useState } from 'react';
 import { APP_CONFIG } from '../../config/appConfig';
@@ -26,35 +27,35 @@ export const UiComp = observer(() => {
     initialLoadDone.current = true;
 
     const loadInitialModels = async () => {
-        viewManager.setIsInitialLoading(true);
-        
-        const categories = APP_CONFIG.initialModels;
-        
-        // Stage 1: Load Models
-        setLoadingMessage('Loading 3D Model Geometries...');
-        for (const path of categories.adults) {
-            try {
-                const fileName = path.split('/').pop()?.split('\\').pop() || 'Adult Model';
-                await meshesManager.addGLBUrl(path, fileName, 'adult', false);
-            } catch (error) {
-                console.error(`Failed to auto-load adult model: ${path}`, error);
-            }
+      viewManager.setIsInitialLoading(true);
+
+      const categories = APP_CONFIG.initialModels;
+
+      // Stage 1: Load Models
+      setLoadingMessage('Loading 3D Model Geometries...');
+      for (const path of categories.adults) {
+        try {
+          const fileName = path.split('/').pop()?.split('\\').pop() || 'Adult Model';
+          await meshesManager.addGLBUrl(path, fileName, 'adult', false);
+        } catch (error) {
+          console.error(`Failed to auto-load adult model: ${path}`, error);
         }
+      }
 
-        for (const path of categories.kids) {
-            try {
-                const fileName = path.split('/').pop()?.split('\\').pop() || 'Kid Model';
-                await meshesManager.addGLBUrl(path, fileName, 'kid', false);
-            } catch (error) {
-                console.error(`Failed to auto-load kid model: ${path}`, error);
-            }
+      for (const path of categories.kids) {
+        try {
+          const fileName = path.split('/').pop()?.split('\\').pop() || 'Kid Model';
+          await meshesManager.addGLBUrl(path, fileName, 'kid', false);
+        } catch (error) {
+          console.error(`Failed to auto-load kid model: ${path}`, error);
         }
+      }
 
-        // Stage 2: Load Landmarks
-        setLoadingMessage('Processing Landmark Cache & Raycasting...');
-        await meshesManager.loadAllStaticLandmarks();
+      // Stage 2: Load Landmarks
+      setLoadingMessage('Processing Landmark Cache & Raycasting...');
+      await meshesManager.loadAllStaticLandmarks();
 
-        viewManager.setIsInitialLoading(false);
+      viewManager.setIsInitialLoading(false);
     };
 
     loadInitialModels();
@@ -84,22 +85,63 @@ export const UiComp = observer(() => {
           width: '100%',
         }}>
 
-        {/* 3D Viewer Area */}
-        <Box
-          sx={{
-            flex: 1,
-            m: 0, // Fill entire space
-            overflow: 'hidden',
-            position: 'relative',
-          }}>
-          <Viewer3D />
+        {viewManager.comparisonImage ? (
+          <Box sx={{ display: 'flex', flex: 1, width: '100%', position: 'relative' }}>
+            <Box sx={{ flex: 1, position: 'relative', borderLeft: '1px solid #333' }}>
+              <Viewer3D />
+            </Box>
 
-          {/* Left-side assets panel */}
-          <Sidebar />
-        </Box>
+            <Box sx={{ flex: 1, backgroundColor: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <img
+                src={viewManager.comparisonImage}
+                alt="Comparison"
+                style={{
+                  maxWidth: '100vw',
+                  maxHeight: '100vh',
+                  objectFit: 'contain',
+                }}
+              />
+            </Box>
 
-        {/* Right-side model details panel */}
-        <ModelDetailsSidebar />
+            <IconButton
+              onClick={() => viewManager.setComparisonImage(null)}
+              sx={{
+                position: 'fixed',
+                top: 16,
+                right: 16,
+                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                color: '#333',
+                zIndex: 9999,
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                '&:hover': {
+                  backgroundColor: '#fff',
+                  transform: 'scale(1.05)',
+                },
+              }}
+            >
+              <Close />
+            </IconButton>
+          </Box>
+        ) : (
+          <>
+            {/* 3D Viewer Area */}
+            <Box
+              sx={{
+                flex: 1,
+                m: 0, // Fill entire space
+                overflow: 'hidden',
+                position: 'relative',
+              }}>
+              <Viewer3D />
+
+              {/* Left-side assets panel */}
+              <Sidebar />
+            </Box>
+
+            {/* Right-side model details panel */}
+            <ModelDetailsSidebar />
+          </>
+        )}
       </Box>
 
       {/* Modals */}
@@ -124,24 +166,24 @@ export const UiComp = observer(() => {
 
       {/* Global Initial Loading Overlay */}
       <Backdrop
-        sx={{ 
-            color: '#fff', 
-            zIndex: (theme: Theme) => theme.zIndex.drawer + 2000,
-            backgroundColor: 'rgba(0, 0, 0, 0.85)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 2
+        sx={{
+          color: '#fff',
+          zIndex: (theme: Theme) => theme.zIndex.drawer + 2000,
+          backgroundColor: 'rgba(0, 0, 0, 0.85)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 2
         }}
         open={viewManager.isInitialLoading}
       >
         <CircularProgress color="inherit" size={60} thickness={4} />
         <Stack spacing={0.5} alignItems="center">
-            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                Initializing Virtual Fitting
-            </Typography>
-            <Typography variant="body2" sx={{ opacity: 0.8 }}>
-                {loadingMessage}
-            </Typography>
+          <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+            Initializing Virtual Fitting
+          </Typography>
+          <Typography variant="body2" sx={{ opacity: 0.8 }}>
+            {loadingMessage}
+          </Typography>
         </Stack>
       </Backdrop>
     </Box>
