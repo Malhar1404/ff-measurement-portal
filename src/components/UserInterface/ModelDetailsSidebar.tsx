@@ -20,12 +20,13 @@ import { useSnackbar } from 'notistack';
 import { SyntheticEvent, useState } from 'react';
 
 import { useMainContext } from '../../hooks/useMainContext';
+import CommentsBox from './Commentbox';
 
 type SidebarTab = 'landmarks' | 'images';
 type LandmarkCoordinate = 'x' | 'y' | 'z';
 
 export const ModelDetailsSidebar = observer(() => {
-  const { meshesManager } = useMainContext();
+  const { meshesManager, viewManager } = useMainContext();
   const { enqueueSnackbar } = useSnackbar();
   const selectedModel = meshesManager.selectedModel;
   const meshLandmarks = selectedModel?.landmarks['Mesh landmarks'] || [];
@@ -355,6 +356,20 @@ export const ModelDetailsSidebar = observer(() => {
             </Box>
           )}
         </Box>
+
+        <CommentsBox
+          key={selectedModel?.id || 'no-model'}
+          defaultValue={selectedModel?.modelComment ?? ''}
+          onSubmit={(comment) => {
+            if (selectedModel) {
+              selectedModel.setModelComment(comment);
+              enqueueSnackbar('Comment saved successfully.', {
+                variant: 'success',
+              });
+            }
+          }}
+          disabled={!selectedModel}
+        />
 
         {activeTab === 'landmarks' ? (
           <Box

@@ -55,6 +55,7 @@ export class MeshManager {
   landmarkResponse: any = null;
   measurementResponse: any = null;
   selectedMeshLandmarkName: string | null = null;
+  modelComment: string = '';
 
   // Each mesh has its own skirt instance
   skirt: SkirtInstance;
@@ -104,7 +105,9 @@ export class MeshManager {
   setImages(images: string[]) {
     this.images = images;
   }
-
+  setModelComment(comment: string) {
+    this.modelComment = comment;
+  }
   updateMeshLandmarkPosition(
     landmarkName: string,
     position: THREE.Vector3,
@@ -291,7 +294,9 @@ export class MeshManager {
       this.landmarks['Mesh landmarks'].length > 0
     );
   }
-
+  get comment() {
+    return this.modelComment;
+  }
   get hasMeasurements() {
     return this.lineData !== null;
   }
@@ -352,8 +357,8 @@ export class MeshManager {
       planeY: slice.plane_y ?? this.extractLandmarkPosition(rawLandmark).y,
       contours: Array.isArray(slice.contours)
         ? slice.contours.map((contour: SerializedSlicePoint[]) =>
-            contour.map((point) => this.deserializeVector3(point)),
-          )
+          contour.map((point) => this.deserializeVector3(point)),
+        )
         : [],
       largestContour: slice.largest_contour.map((point: SerializedSlicePoint) =>
         this.deserializeVector3(point),

@@ -19,6 +19,7 @@ export class ViewManager {
   private _showDebugPoints = true;
   private _activeCategoryTab: 'adult' | 'kid' = 'adult';
   private _isInitialLoading = false;
+  private _modelComment = ''
 
   constructor(libState: StateManager) {
     this._libState = libState;
@@ -90,7 +91,7 @@ export class ViewManager {
     return false;
   }
 
-  setIsSkirtTransformVisible(_value: boolean) {}
+  setIsSkirtTransformVisible(_value: boolean) { }
 
   get showDebugPoints() {
     return this._showDebugPoints;
@@ -101,18 +102,25 @@ export class ViewManager {
   }
 
   get activeCategoryTab() {
-      return this._activeCategoryTab;
+    return this._activeCategoryTab;
   }
 
   setActiveCategoryTab(value: 'adult' | 'kid') {
-      this._activeCategoryTab = value;
+    this._activeCategoryTab = value;
   }
 
   get isInitialLoading() {
-      return this._isInitialLoading;
+    return this._isInitialLoading;
   }
 
   setIsInitialLoading(value: boolean) {
-      this._isInitialLoading = value;
+    this._isInitialLoading = value;
+  }
+  setComment(comment: string) {
+    this._modelComment = comment;
+    debugger
+  }
+  get modelComment() {
+    return this._modelComment;
   }
 }
