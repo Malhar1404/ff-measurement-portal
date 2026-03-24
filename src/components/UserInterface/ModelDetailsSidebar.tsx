@@ -356,21 +356,20 @@ export const ModelDetailsSidebar = observer(() => {
           )}
         </Box>
 
-        <CommentsBox
-          key={selectedModel?.id || 'no-model'}
-          defaultValue={selectedModel?.modelComment ?? ''}
-          onSubmit={(comment) => {
-            if (selectedModel) {
-              selectedModel.setModelComment(comment);
-              enqueueSnackbar('Comment saved successfully.', {
-                variant: 'success',
-              });
-            }
-          }}
-          disabled={!selectedModel}
-        />
-
-        {activeTab === 'landmarks' ? (
+        {activeTab === 'landmarks' ? (<>
+          <CommentsBox
+            key={selectedModel?.id || 'no-model'}
+            defaultValue={selectedModel?.modelComment ?? ''}
+            onSubmit={(comment) => {
+              if (selectedModel) {
+                selectedModel.setModelComment(comment);
+                enqueueSnackbar('Comment saved successfully.', {
+                  variant: 'success',
+                });
+              }
+            }}
+            disabled={!selectedModel}
+          />
           <Box
             sx={{
               backgroundColor: '#fff',
@@ -420,6 +419,7 @@ export const ModelDetailsSidebar = observer(() => {
               Save Draft
             </Button>
           </Box>
+        </>
         ) : null}
       </Paper>
 
