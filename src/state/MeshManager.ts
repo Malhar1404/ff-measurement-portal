@@ -44,6 +44,7 @@ export class MeshManager {
   blobUrl: string;
   category: 'adult' | 'kid' = 'adult';
   images: string[] = [];
+  isApproved: boolean = false;
 
   // Data isolation
   landmarks: LandmarkType = {
@@ -82,6 +83,10 @@ export class MeshManager {
   setLandmarks(landmarks: LandmarkType) {
     this.landmarks = landmarks;
     this.updateSkirt();
+  }
+
+  setApproved(value: boolean) {
+    this.isApproved = value;
   }
 
   setLineData(lineData: BodyMeasurementPoints) {

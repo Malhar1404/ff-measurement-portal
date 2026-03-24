@@ -4,6 +4,7 @@ import {
   SaveOutlined,
   Collections,
   EditLocationAlt,
+  Check,
 } from '@mui/icons-material';
 import {
   Box,
@@ -72,6 +73,24 @@ export const ModelDetailsSidebar = observer(() => {
     }
 
     meshesManager.exportLandmarks();
+  };
+
+  const handleApprove = () => {
+    if (!selectedModel) {
+      return;
+    }
+
+    if (!selectedModel.allMeshLandmarksSaved) {
+      enqueueSnackbar('Please save all 3 points before approving.', {
+        variant: 'error',
+      });
+      return;
+    }
+
+    selectedModel.setApproved(true);
+    enqueueSnackbar('Model approved successfully.', {
+      variant: 'success',
+    });
   };
 
   const getLandmarkStatusStyles = (color?: string) => {
@@ -145,7 +164,7 @@ export const ModelDetailsSidebar = observer(() => {
               }}>
               {formatModelName(selectedModel?.fileName)}
             </Typography>
-            
+
           </Box>
         </Box>
 
@@ -202,103 +221,103 @@ export const ModelDetailsSidebar = observer(() => {
                   const statusStyles = getLandmarkStatusStyles(landmark.color);
 
                   return (
-                <Box
-                  key={landmark.name}
-                  sx={{
-                    backgroundColor: statusStyles.backgroundColor,
-                    border: `1px solid ${statusStyles.borderColor}`,
-                    borderRadius: 2,
-                    boxShadow: statusStyles.boxShadow,
-                    p: 1.2,
-                    transition:
-                      'background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease',
-                  }}>
-                  <Box
-                    sx={{
-                      alignItems: 'center',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      gap: 0.75,
-                      mb: 0.9,
-                    }}>
-                    <Typography
-                      sx={{
-                        color: statusStyles.titleColor,
-                        fontSize: '0.88rem',
-                        fontWeight: 700,
-                      }}
-                      variant="body2">
-                      {formatLandmarkLabel(landmark.name)}
-                    </Typography>
-
                     <Box
+                      key={landmark.name}
                       sx={{
-                        display: 'flex',
-                        gap: 0.6,
-                        justifyContent: 'flex-end',
+                        backgroundColor: statusStyles.backgroundColor,
+                        border: `1px solid ${statusStyles.borderColor}`,
+                        borderRadius: 2,
+                        boxShadow: statusStyles.boxShadow,
+                        p: 1.2,
+                        transition:
+                          'background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease',
                       }}>
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        onClick={() => handleEditLandmark(landmark.name)}
-                        sx={{
-                          backgroundColor: isSelected ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.2)',
-                          borderRadius: 2,
-                          fontSize: '0.7rem',
-                          minWidth: 0,
-                          px: 0.75,
-                          py: 0.25,
-                          textTransform: 'none',
-                        }}>
-                        <EditOutlined sx={{ fontSize: '0.95rem' }} />
-                      </Button>
-                      <Button
-                        size="small"
-                        variant="contained"
-                        onClick={() => handleSaveLandmark(landmark.name)}
-                        sx={{
-                          backgroundColor: 'rgba(25, 118, 210, 0.9)',
-                          borderRadius: 2,
-                          boxShadow: 'none',
-                          fontSize: '0.7rem',
-                          minWidth: 0,
-                          minHeight: 0,
-                          '&:hover': {
-                            backgroundColor: 'rgba(25, 118, 210, 1)',
-                          },
-                          px: 0.75,
-                          py: 0.25,
-                          textTransform: 'none',
-                        }}>
-                        <SaveOutlined sx={{ fontSize: '0.95rem' }} />
-                      </Button>
-                    </Box>
-                  </Box>
-
-                  <Box sx={{ display: 'grid', gap: 0.75, gridTemplateColumns: 'repeat(3, 1fr)' }}>
-                    {(['x', 'y', 'z'] as LandmarkCoordinate[]).map((coordinate) => (
                       <Box
-                        key={coordinate}
                         sx={{
-                          backgroundColor: statusStyles.coordinateBg,
-                          borderRadius: 1.5,
-                          px: 0.85,
-                          py: 0.8,
+                          alignItems: 'center',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          gap: 0.75,
+                          mb: 0.9,
                         }}>
                         <Typography
-                          sx={{ color: '#6b7280', fontSize: '0.66rem' }}
-                          variant="caption">
-                          {coordinate.toUpperCase()}
-                        </Typography>
-                        <Typography
-                          sx={{ color: '#1f2937', fontSize: '0.8rem', fontWeight: 600 }}
+                          sx={{
+                            color: statusStyles.titleColor,
+                            fontSize: '0.88rem',
+                            fontWeight: 700,
+                          }}
                           variant="body2">
-                          {formatCoordinate(landmark?.position[coordinate])}
+                          {formatLandmarkLabel(landmark.name)}
                         </Typography>
+
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            gap: 0.6,
+                            justifyContent: 'flex-end',
+                          }}>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            onClick={() => handleEditLandmark(landmark.name)}
+                            sx={{
+                              backgroundColor: isSelected ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.2)',
+                              borderRadius: 2,
+                              fontSize: '0.7rem',
+                              minWidth: 0,
+                              px: 0.75,
+                              py: 0.25,
+                              textTransform: 'none',
+                            }}>
+                            <EditOutlined sx={{ fontSize: '0.95rem' }} />Edit
+                          </Button>
+                          <Button
+                            size="small"
+                            variant="contained"
+                            onClick={() => handleSaveLandmark(landmark.name)}
+                            sx={{
+                              backgroundColor: 'rgba(25, 118, 210, 0.9)',
+                              borderRadius: 2,
+                              boxShadow: 'none',
+                              fontSize: '0.7rem',
+                              minWidth: 0,
+                              minHeight: 0,
+                              '&:hover': {
+                                backgroundColor: 'rgba(25, 118, 210, 1)',
+                              },
+                              px: 0.75,
+                              py: 0.25,
+                              textTransform: 'none',
+                            }}>
+                            <SaveOutlined sx={{ fontSize: '0.95rem' }} />Save
+                          </Button>
+                        </Box>
                       </Box>
-                    ))}
-                  </Box>
-                </Box>
+
+                      {/* <Box sx={{ display: 'grid', gap: 0.75, gridTemplateColumns: 'repeat(3, 1fr)' }}>
+                        {(['x', 'y', 'z'] as LandmarkCoordinate[]).map((coordinate) => (
+                          <Box
+                            key={coordinate}
+                            sx={{
+                              backgroundColor: statusStyles.coordinateBg,
+                              borderRadius: 1.5,
+                              px: 0.85,
+                              py: 0.8,
+                            }}>
+                            <Typography
+                              sx={{ color: '#6b7280', fontSize: '0.66rem' }}
+                              variant="caption">
+                              {coordinate.toUpperCase()}
+                            </Typography>
+                            <Typography
+                              sx={{ color: '#1f2937', fontSize: '0.8rem', fontWeight: 600 }}
+                              variant="body2">
+                              {formatCoordinate(landmark?.position[coordinate])}
+                            </Typography>
+                          </Box>
+                        ))}
+                      </Box> */}
+                    </Box>
                   );
                 })
               )}
@@ -367,21 +386,48 @@ export const ModelDetailsSidebar = observer(() => {
               backgroundColor: '#fff',
               borderTop: '1px solid #e0e0e0',
               p: 1.5,
-            }}>
+              display: 'flex',
+              gap: 1,
+            }}
+          >
+            {/* Approve */}
+            <Button
+              fullWidth
+              size="small"
+              variant="contained"
+              color="success"
+              startIcon={<Check />}
+              onClick={handleApprove}
+              disabled={!selectedModel?.hasLandmarks}
+              sx={{
+                borderRadius: 2,
+                fontSize: '0.7rem',
+                py: 0.6,
+                textTransform: 'none',
+                fontWeight: 500,
+              }}
+            >
+              Approve
+            </Button>
+
+            {/* Save Draft */}
             <Button
               fullWidth
               size="small"
               variant="outlined"
+              color="primary"
               startIcon={<SaveAlt />}
               onClick={handleSaveLandmarks}
               disabled={!selectedModel?.hasLandmarks}
               sx={{
                 borderRadius: 2,
-                fontSize: '0.75rem',
-                py: 0.5,
+                fontSize: '0.7rem',
+                py: 0.6,
                 textTransform: 'none',
-              }}>
-              Save Landmarks
+                fontWeight: 500,
+              }}
+            >
+              Save Draft
             </Button>
           </Box>
         ) : null}

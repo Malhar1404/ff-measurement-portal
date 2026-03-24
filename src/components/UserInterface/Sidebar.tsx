@@ -110,7 +110,7 @@ export const Sidebar = observer(() => {
                     <CheckCircle
                       fontSize="small"
                       sx={{
-                        color: model.allMeshLandmarksSaved
+                        color: model.isApproved
                           ? 'success.main'
                           : 'rgba(148, 163, 184, 0.45)',
                       }}
