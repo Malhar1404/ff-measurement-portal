@@ -1,4 +1,4 @@
-import { Line } from '@react-three/drei';
+import { Line, Text } from '@react-three/drei';
 import { useThree } from '@react-three/fiber';
 import { observer } from 'mobx-react-lite';
 import * as THREE from 'three';
@@ -12,6 +12,51 @@ const ALWAYS_VISIBLE_MEASUREMENT_LANDMARKS = new Set([
   'hip_landmark',
   'narrow_waist_landmark',
 ]);
+
+const LANDMARK_THEME: Record<
+  string,
+  {
+    base: string;
+    accent: string;
+    groove: string;
+    contour: string;
+    selectedBase: string;
+    selectedAccent: string;
+    selectedGroove: string;
+    label: string;
+  }
+> = {
+  chest_landmark: {
+    base: '#0e7490',
+    accent: '#0891b2',
+    groove: '#a5f3fc',
+    contour: '#22d3ee',
+    selectedBase: '#06b6d4',
+    selectedAccent: '#22d3ee',
+    selectedGroove: '#cffafe',
+    label: 'Chest',
+  },
+  narrow_waist_landmark: {
+    base: '#92400e',
+    accent: '#b45309',
+    groove: '#fde68a',
+    contour: '#fbbf24',
+    selectedBase: '#f59e0b',
+    selectedAccent: '#fcd34d',
+    selectedGroove: '#fef3c7',
+    label: 'Waist',
+  },
+  hip_landmark: {
+    base: '#6b21a8',
+    accent: '#7e22ce',
+    groove: '#e9d5ff',
+    contour: '#c084fc',
+    selectedBase: '#a855f7',
+    selectedAccent: '#c084fc',
+    selectedGroove: '#f3e8ff',
+    label: 'Hip',
+  },
+};
 
 export const GlbViewer = observer(() => {
   const { camera, gl, raycaster } = useThree();
@@ -131,9 +176,17 @@ const LandmarkPoint = observer(({
   const shouldShowMeasurementControl = ALWAYS_VISIBLE_MEASUREMENT_LANDMARKS.has(
     point.name,
   );
-  const controlColor = isSelected ? '#1d4ed8' : '#123c8b';
-  const controlAccentColor = isSelected ? '#1e40af' : '#0a2a66';
-  const grooveColor = isSelected ? '#dbeafe' : '#bfdbfe';
+  const theme = LANDMARK_THEME[point.name];
+  const controlColor = isSelected
+    ? (theme?.selectedBase ?? '#1d4ed8')
+    : (theme?.base ?? '#123c8b');
+  const controlAccentColor = isSelected
+    ? (theme?.selectedAccent ?? '#1e40af')
+    : (theme?.accent ?? '#0a2a66');
+  const grooveColor = isSelected
+    ? (theme?.selectedGroove ?? '#dbeafe')
+    : (theme?.groove ?? '#bfdbfe');
+  const contourColor = theme?.contour ?? '#6df0ff';
   // Handle is always at BB center X offset to the left, fixed Z = BB center Z
   const handlePosition = new THREE.Vector3(
     bbCenterX - leftGuideLength,
@@ -165,10 +218,10 @@ const LandmarkPoint = observer(({
         />
       )}
 
-      {isSelected && contourLinePoints.length > 1 && (
+      {(isSelected || hasMoved) && contourLinePoints.length > 1 && (
         <Line
           points={contourLinePoints}
-          color="#6df0ff"
+          color={contourColor}
           depthTest={false}
           lineWidth={2.2}
           renderOrder={0}
@@ -231,6 +284,23 @@ const LandmarkPoint = observer(({
         />
       </mesh>
 
+      {shouldShowMeasurementControl && theme && (
+        <Text
+          position={[
+            handlePosition.x - 5.5,
+            handlePosition.y,
+            handlePosition.z,
+          ]}
+          fontSize={2.8}
+          color={isSelected ? theme.selectedGroove : theme.groove}
+          anchorX="right"
+          anchorY="middle"
+          depthOffset={-1}
+          renderOrder={1}>
+          {theme.label}
+        </Text>
+      )}
+
       {shouldShowMeasurementControl && (
         <mesh
           position={[
@@ -238,8 +308,9 @@ const LandmarkPoint = observer(({
             handlePosition.y,
             handlePosition.z,
           ]}
-          onPointerDown={(e: any) => handleLandmarkPointerDown(e, point.name)}>
-          <boxGeometry args={[4.2, 1.8, 0.75]} />
+          onPointerDown={(e: any) => handleLandmarkPointerDown(e, point.name)}
+          onClick={(e: any) => handleLandmarkClick(e, point.name)}>
+          <boxGeometry args={[7.0, 3.0, 1.2]} />
           <meshStandardMaterial
             color={controlColor}
             emissive={controlAccentColor}
@@ -254,12 +325,13 @@ const LandmarkPoint = observer(({
       {shouldShowMeasurementControl && (
         <mesh
           position={[
-            handlePosition.x - 1.1,
+            handlePosition.x - 1.8,
             handlePosition.y,
             handlePosition.z + 0.01,
           ]}
-          onPointerDown={(e: any) => handleLandmarkPointerDown(e, point.name)}>
-          <boxGeometry args={[0.28, 1.05, 0.1]} />
+          onPointerDown={(e: any) => handleLandmarkPointerDown(e, point.name)}
+          onClick={(e: any) => handleLandmarkClick(e, point.name)}>
+          <boxGeometry args={[0.45, 1.8, 0.18]} />
           <meshStandardMaterial
             color={grooveColor}
             transparent
@@ -276,8 +348,9 @@ const LandmarkPoint = observer(({
             handlePosition.y,
             handlePosition.z + 0.01,
           ]}
-          onPointerDown={(e: any) => handleLandmarkPointerDown(e, point.name)}>
-          <boxGeometry args={[0.28, 1.05, 0.1]} />
+          onPointerDown={(e: any) => handleLandmarkPointerDown(e, point.name)}
+          onClick={(e: any) => handleLandmarkClick(e, point.name)}>
+          <boxGeometry args={[0.45, 1.8, 0.18]} />
           <meshStandardMaterial
             color={grooveColor}
             transparent
@@ -290,12 +363,13 @@ const LandmarkPoint = observer(({
       {shouldShowMeasurementControl && (
         <mesh
           position={[
-            handlePosition.x + 1.1,
+            handlePosition.x + 1.8,
             handlePosition.y,
             handlePosition.z + 0.01,
           ]}
-          onPointerDown={(e: any) => handleLandmarkPointerDown(e, point.name)}>
-          <boxGeometry args={[0.28, 1.05, 0.1]} />
+          onPointerDown={(e: any) => handleLandmarkPointerDown(e, point.name)}
+          onClick={(e: any) => handleLandmarkClick(e, point.name)}>
+          <boxGeometry args={[0.45, 1.8, 0.18]} />
           <meshStandardMaterial
             color={grooveColor}
             transparent
