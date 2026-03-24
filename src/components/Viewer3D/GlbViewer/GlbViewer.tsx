@@ -75,7 +75,7 @@ export const GlbViewer = observer(() => {
     const size = bb.getSize(new THREE.Vector3());
     const center = bb.getCenter(new THREE.Vector3());
     return {
-      leftGuideLength: size.x / 2 + 1,
+      leftGuideLength: size.x / 2 + 3,
       bbCenterX: center.x,
       bbCenterZ: center.z,
     };
