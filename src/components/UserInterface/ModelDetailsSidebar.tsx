@@ -293,30 +293,6 @@ export const ModelDetailsSidebar = observer(() => {
                           </Button>
                         </Box>
                       </Box>
-
-                      {/* <Box sx={{ display: 'grid', gap: 0.75, gridTemplateColumns: 'repeat(3, 1fr)' }}>
-                        {(['x', 'y', 'z'] as LandmarkCoordinate[]).map((coordinate) => (
-                          <Box
-                            key={coordinate}
-                            sx={{
-                              backgroundColor: statusStyles.coordinateBg,
-                              borderRadius: 1.5,
-                              px: 0.85,
-                              py: 0.8,
-                            }}>
-                            <Typography
-                              sx={{ color: '#6b7280', fontSize: '0.66rem' }}
-                              variant="caption">
-                              {coordinate.toUpperCase()}
-                            </Typography>
-                            <Typography
-                              sx={{ color: '#1f2937', fontSize: '0.8rem', fontWeight: 600 }}
-                              variant="body2">
-                              {formatCoordinate(landmark?.position[coordinate])}
-                            </Typography>
-                          </Box>
-                        ))}
-                      </Box> */}
                     </Box>
                   );
                 })
