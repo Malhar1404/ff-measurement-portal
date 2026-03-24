@@ -31,6 +31,10 @@ export class MeshesManager {
   }
 
   setSelectedModelId(id: string | null) {
+    if (this.selectedModelId === id) {
+      return;
+    }
+
     this.selectedModelId = id;
 
     if (id && this._models.has(id)) {
