@@ -9,7 +9,7 @@ import { Light } from './Light/Light';
 
 export const Viewer3D = observer(() => {
   return (
-    <div style={{ height: '100%', position: 'relative', width: '100%' }}>
+    <div style={{ height: '100%', position: 'relative', width: '100%', backgroundColor: '#030508' }}>
       <Canvas3D>
         <Camera />
         <Light />
