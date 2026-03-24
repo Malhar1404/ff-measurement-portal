@@ -7,8 +7,8 @@ import { StateManager } from './StateManager';
 
 export class CameraManager {
   private static readonly FIT_PADDING_RATIO = 0.04;
-  private static readonly MIN_DISTANCE_RATIO = 0.5;
-  private static readonly MAX_DISTANCE_RATIO = 1;
+  private static readonly MIN_DISTANCE_RATIO = 0.05;
+  private static readonly MAX_DISTANCE_RATIO = 3;
 
   private _libState: StateManager;
   private _cameraRef: CameraControls | null = null;
@@ -63,7 +63,7 @@ export class CameraManager {
     );
 
     controls.minDistance = Math.max(
-      1,
+      0.01,
       fitDistance * CameraManager.MIN_DISTANCE_RATIO,
     );
     controls.maxDistance = Math.max(

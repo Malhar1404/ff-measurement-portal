@@ -13,7 +13,7 @@ export const Camera = observer(() => {
       mouseButtons={{
         left: CameraControlsImpl.ACTION.ROTATE,
         middle: CameraControlsImpl.ACTION.DOLLY,
-        right: CameraControlsImpl.ACTION.NONE,
+        right: CameraControlsImpl.ACTION.TRUCK,
         wheel: CameraControlsImpl.ACTION.DOLLY,
       }}
       touches={{
