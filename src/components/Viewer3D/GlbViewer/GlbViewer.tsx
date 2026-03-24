@@ -60,7 +60,7 @@ const LANDMARK_THEME: Record<
 
 export const GlbViewer = observer(() => {
   const { camera, gl, raycaster } = useThree();
-  const { meshesManager } = useMainContext();
+  const { meshesManager, viewManager } = useMainContext();
   const { handleLandmarkClick, handleLandmarkPointerDown } =
     useMeshLandmarkDrag({ camera, gl, raycaster });
   const selectedModel = meshesManager.selectedModel;
@@ -113,7 +113,7 @@ export const GlbViewer = observer(() => {
         return <SkirtWrapper key={model.id} skirtInstance={model.skirt} />;
       })}
 
-      {meshPoints.map((point: any) => (
+      {!viewManager.comparisonImage && meshPoints.map((point: any) => (
         <LandmarkPoint
           key={`mesh-landmark-${point.name}`}
           defaultMeshPointColor={defaultMeshPointColor}
