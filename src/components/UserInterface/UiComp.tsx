@@ -86,21 +86,67 @@ export const UiComp = observer(() => {
         }}>
 
         {viewManager.comparisonImage ? (
-          <Box sx={{ display: 'flex', flex: 1, width: '100%', position: 'relative' }}>
-            <Box sx={{ flex: 1, position: 'relative', borderLeft: '1px solid #333' }}>
+          <Box sx={{ display: 'flex', flex: 1, width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
+            <Box sx={{ flex: 1, position: 'relative', borderRight: '1px solid #333', height: '100%', overflow: 'hidden' }}>
               <Viewer3D />
             </Box>
 
-            <Box sx={{ flex: 1, backgroundColor: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Box sx={{ flex: 1, backgroundColor: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', height: '100%', overflow: 'hidden' }}>
               <img
                 src={viewManager.comparisonImage}
                 alt="Comparison"
                 style={{
-                  maxWidth: '100vw',
-                  maxHeight: '100vh',
+                  width: '100%',
+                  height: '100%',
                   objectFit: 'contain',
                 }}
               />
+
+              {/* Thumbnails Section */}
+              <Box
+                sx={{
+                  position: 'absolute',
+                  right: 16,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 2,
+                  zIndex: 10,
+                  backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                  padding: 1,
+                  borderRadius: 2,
+                }}
+              >
+                {meshesManager.selectedModel?.images.map((imgUrl, index) => (
+                  <Box
+                    key={`thumb-${imgUrl}-${index}`}
+                    onClick={() => viewManager.setComparisonImage(imgUrl)}
+                    sx={{
+                      width: 64,
+                      height: 80,
+                      borderRadius: 1,
+                      overflow: 'hidden',
+                      cursor: 'pointer',
+                      border: viewManager.comparisonImage === imgUrl ? '2px solid #6df0ff' : '2px solid transparent',
+                      opacity: viewManager.comparisonImage === imgUrl ? 1 : 0.6,
+                      transition: 'all 0.2s',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
+                      '&:hover': {
+                        opacity: 1,
+                        transform: 'scale(1.05)',
+                        border: '2px solid rgba(109, 240, 255, 0.7)',
+                      }
+                    }}
+                  >
+                    <img
+                      src={imgUrl}
+                      alt={`Thumbnail ${index + 1}`}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                    />
+                  </Box>
+                ))}
+              </Box>
             </Box>
 
             <IconButton
