@@ -228,27 +228,6 @@ const LandmarkPoint = observer(({
         />
       )}
 
-      {(hasMoved || isSelected) && (
-        <mesh
-          raycast={() => null}
-          renderOrder={999}
-          position={[
-            originalPosition.x,
-            originalPosition.y,
-            originalPosition.z,
-          ]}>
-          <sphereGeometry args={[0.72, 18, 18]} />
-          <meshStandardMaterial
-            color="#9aa0a6"
-            emissive="#4b5563"
-            emissiveIntensity={0.08}
-            opacity={0.45}
-            transparent
-            depthTest={false}
-          />
-        </mesh>
-      )}
-
       {isSelected && hasMoved && (
         <Line
           points={connectorPoints}
@@ -279,7 +258,7 @@ const LandmarkPoint = observer(({
         scale={isSelected ? [1.35, 1.35, 1.35] : [1, 1, 1]}
         onPointerDown={(e: any) => handleLandmarkPointerDown(e, point.name)}
         onClick={(e: any) => handleLandmarkClick(e, point.name)}>
-        <sphereGeometry args={[1, 24, 24]} />
+
         <meshStandardMaterial
           color={point.color || defaultMeshPointColor}
           emissive={isSelected ? '#ffffff' : '#000000'}
@@ -315,7 +294,7 @@ const LandmarkPoint = observer(({
           renderOrder={999}
           onPointerDown={(e: any) => handleLandmarkPointerDown(e, point.name)}
           onClick={(e: any) => handleLandmarkClick(e, point.name)}>
-          <sphereGeometry args={[2.5, 32, 32]} />
+          <sphereGeometry args={[1.5, 32, 32]} />
           <meshStandardMaterial
             color={controlColor}
             emissive={controlAccentColor}
