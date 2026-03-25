@@ -60,3 +60,14 @@ export type UpdateJsonUrlResponse = {
   success: boolean;
   json_url: string;
 };
+
+export type AddCommentResponse = {
+  comment_id: string,
+  created_at: string,
+  model_id: string,
+  comment: string,
+}
+export type AddCommentRequest = {
+  model_id: string;
+  comment: string;
+};

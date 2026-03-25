@@ -1,5 +1,7 @@
 import apiClient from '../config/axiosConfig';
 import {
+  AddCommentRequest,
+  AddCommentResponse,
   ApiModelDetail,
   FetchAllModelsResponse,
   UpdateJsonUrlRequest,
@@ -48,5 +50,11 @@ export async function updateLandmarkJson(
     'api/update-json-url',
     payload,
   );
+  return response.data;
+}
+
+export async function addComment(payload: AddCommentRequest) : Promise<AddCommentResponse>{
+  const response = await apiClient.post('api/add-comment', payload);
+
   return response.data;
 }

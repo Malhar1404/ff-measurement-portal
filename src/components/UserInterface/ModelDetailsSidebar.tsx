@@ -21,7 +21,7 @@ import { SyntheticEvent, useState } from 'react';
 
 import { useMainContext } from '../../hooks/useMainContext';
 import CommentsBox from './CommentBox';
-import { updateModelStatus } from '../../services/modelService';
+import { addComment, updateModelStatus } from '../../services/modelService';
 
 type SidebarTab = 'landmarks' | 'images';
 
@@ -368,14 +368,28 @@ export const ModelDetailsSidebar = observer(() => {
           <CommentsBox
             key={selectedModel?.id || 'no-model'}
             defaultValue={selectedModel?.modelComment ?? ''}
-            onSubmit={(comment) => {
-              if (selectedModel) {
-                selectedModel.setModelComment(comment);
-                enqueueSnackbar('Comment saved successfully.', {
-                  variant: 'success',
-                });
-              }
-            }}
+           onSubmit={(comment) => {
+  if (selectedModel && selectedModel.dbId) {
+    try {
+      addComment({
+        model_id: selectedModel.dbId,
+        comment,
+      });
+
+      selectedModel.setModelComment(comment);
+
+      enqueueSnackbar('Comment saved successfully.', {
+        variant: 'success',
+      });
+
+    } catch (error) {
+      console.error('Error saving comment:', error);
+      enqueueSnackbar('Error saving comment.', {
+        variant: 'error',
+      });
+    }
+  }
+}}
             disabled={!selectedModel}
           />
           <Box
