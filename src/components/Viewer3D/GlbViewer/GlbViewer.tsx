@@ -75,9 +75,9 @@ export const GlbViewer = observer(() => {
     const size = bb.getSize(new THREE.Vector3());
     const center = bb.getCenter(new THREE.Vector3());
     return {
-      leftGuideLength: size.x / 2 + 3,
+      leftGuideLength: 0,
       bbCenterX: center.x,
-      bbCenterZ: center.z,
+      bbCenterZ: size.z / 2,
     };
   })();
 
@@ -287,11 +287,11 @@ const LandmarkPoint = observer(({
       {shouldShowMeasurementControl && theme && (
         <Text
           position={[
-            handlePosition.x - 5.5,
+            handlePosition.x - 20,
             handlePosition.y,
             handlePosition.z,
           ]}
-          fontSize={2.8}
+          fontSize={4}
           color={isSelected ? theme.selectedGroove : theme.groove}
           anchorX="right"
           anchorY="middle"
@@ -310,70 +310,13 @@ const LandmarkPoint = observer(({
           ]}
           onPointerDown={(e: any) => handleLandmarkPointerDown(e, point.name)}
           onClick={(e: any) => handleLandmarkClick(e, point.name)}>
-          <boxGeometry args={[7.0, 3.0, 1.2]} />
+          <sphereGeometry args={[2.5, 32, 32]} />
           <meshStandardMaterial
             color={controlColor}
             emissive={controlAccentColor}
             emissiveIntensity={0.35}
             transparent
             opacity={0.98}
-            depthTest={false}
-          />
-        </mesh>
-      )}
-
-      {shouldShowMeasurementControl && (
-        <mesh
-          position={[
-            handlePosition.x - 1.8,
-            handlePosition.y,
-            handlePosition.z + 0.01,
-          ]}
-          onPointerDown={(e: any) => handleLandmarkPointerDown(e, point.name)}
-          onClick={(e: any) => handleLandmarkClick(e, point.name)}>
-          <boxGeometry args={[0.45, 1.8, 0.18]} />
-          <meshStandardMaterial
-            color={grooveColor}
-            transparent
-            opacity={0.95}
-            depthTest={false}
-          />
-        </mesh>
-      )}
-
-      {shouldShowMeasurementControl && (
-        <mesh
-          position={[
-            handlePosition.x,
-            handlePosition.y,
-            handlePosition.z + 0.01,
-          ]}
-          onPointerDown={(e: any) => handleLandmarkPointerDown(e, point.name)}
-          onClick={(e: any) => handleLandmarkClick(e, point.name)}>
-          <boxGeometry args={[0.45, 1.8, 0.18]} />
-          <meshStandardMaterial
-            color={grooveColor}
-            transparent
-            opacity={0.95}
-            depthTest={false}
-          />
-        </mesh>
-      )}
-
-      {shouldShowMeasurementControl && (
-        <mesh
-          position={[
-            handlePosition.x + 1.8,
-            handlePosition.y,
-            handlePosition.z + 0.01,
-          ]}
-          onPointerDown={(e: any) => handleLandmarkPointerDown(e, point.name)}
-          onClick={(e: any) => handleLandmarkClick(e, point.name)}>
-          <boxGeometry args={[0.45, 1.8, 0.18]} />
-          <meshStandardMaterial
-            color={grooveColor}
-            transparent
-            opacity={0.95}
             depthTest={false}
           />
         </mesh>
