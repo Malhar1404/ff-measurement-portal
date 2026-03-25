@@ -44,6 +44,9 @@ export class MeshManager {
   blobUrl: string;
   category: 'adult' | 'kid' = 'adult';
   images: string[] = [];
+  dbId: string | null = null;
+  status: string = 'not_checked';
+
 
   // Data isolation
   landmarks: LandmarkType = {

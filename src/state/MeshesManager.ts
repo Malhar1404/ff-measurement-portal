@@ -1,5 +1,7 @@
 import { makeAutoObservable, ObservableMap, reaction } from 'mobx';
 import * as THREE from 'three';
+import { ApiModelDetail } from '../types/api';
+
 
 import { APP_CONFIG } from '../config/appConfig';
 import cachedLandmarks from '../config/predefinedLandmarks.json';
@@ -253,6 +255,86 @@ export class MeshesManager {
       throw error;
     }
   };
+
+  addApiModel = async (apiModel: ApiModelDetail) => {
+    try {
+      if (!apiModel.model_glb_url) {
+        throw new Error('GLB URL missing for API model');
+      }
+
+      // 1. Load GLB
+      const scene = await Utils3D.loadGLTF(apiModel.model_glb_url);
+
+      // Clean scene hierarchy if needed
+      scene.traverse((obj) => {
+        if (obj instanceof THREE.Mesh) {
+          obj.material = obj.material.clone();
+        }
+      });
+
+      const fileName = apiModel.model_name || apiModel.model_glb_url.split('/').pop()?.split('\\').pop() || 'Model';
+
+      const model = new MeshManager(
+        scene.uuid,
+        scene,
+        apiModel.model_glb_url,
+        this._libState,
+        fileName,
+        apiModel.category,
+      );
+
+      // Populate DB fields
+      model.dbId = apiModel.model_id;
+      model.status = apiModel.status;
+
+      // Ensure Images from API are mapped
+      if (apiModel.images && apiModel.images.length > 0) {
+        model.setImages(apiModel.images.map((img) => img.image_url));
+      }
+
+      // Check for first comment
+      if (apiModel.comments && apiModel.comments.length > 0) {
+        model.setModelComment(apiModel.comments[0].comment);
+      }
+
+      this._models.set(scene.uuid, model);
+
+      // 2. Automatically load landmarks from S3 if URL provided
+      if (apiModel.landmarks_url) {
+        try {
+          const response = await fetch(apiModel.landmarks_url);
+          if (response.ok) {
+            const data = await response.json();
+            // Handle different JSON structures (top-level mesh_landmarks or wrapped in filename)
+            let landmarkData = data;
+            if (!data.mesh_landmarks && Object.keys(data).length > 0) {
+              const firstKey = Object.keys(data)[0];
+              if (data[firstKey] && data[firstKey].mesh_landmarks) {
+                landmarkData = data[firstKey];
+              }
+            }
+            model.processLandmarkResponse(landmarkData);
+            this._libState.viewManager.addLog(`Loaded landmarks for ${fileName}`, 'success');
+          }
+        } catch (e) {
+          console.warn(`Could not fetch S3 landmark JSON for ${fileName} at ${apiModel.landmarks_url}`);
+          this._libState.viewManager.addLog(`Failed to fetch S3 landmarks for ${fileName}`, 'warning');
+        }
+      }
+
+      // 3. Auto-select first model if none selected
+      if (!this.selectedModelId) {
+        this.setSelectedModelId(scene.uuid);
+      } else if (this.selectedModelId === scene.uuid) {
+        this._libState.cameraManager.focusCameraTo([scene]);
+      }
+      return scene.uuid;
+    } catch (error) {
+      console.error('[MeshesManager] Failed to load API model:', error);
+      throw error;
+    }
+  };
+
 
   async loadAllStaticLandmarks() {
     const models = this.modelsList;

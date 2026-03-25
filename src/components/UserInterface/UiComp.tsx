@@ -4,19 +4,17 @@ import { Close } from '@mui/icons-material';
 import { observer } from 'mobx-react-lite';
 import { useEffect, useRef, useState } from 'react';
 import { APP_CONFIG } from '../../config/appConfig';
+import { fetchAllModelDetails } from '../../services/modelService';
 import { useMainContext } from '../../hooks/useMainContext';
 import { Viewer3D } from '../Viewer3D/Viewer3D';
 import { FileUpload } from './FileUpload';
 import { ModelDetailsSidebar } from './ModelDetailsSidebar';
-import { RunTestModal } from './RunTestModal';
 import { Sidebar } from './Sidebar';
 
 export const UiComp = observer(() => {
   const { meshesManager, viewManager } = useMainContext();
-  const [runTestModalOpen, setRunTestModalOpen] = useState(false);
   const [upload3DModalOpen, setUpload3DModalOpen] = useState(false);
   const [uploadImagesModalOpen, setUploadImagesModalOpen] = useState(false);
-  const [openGenerateCSV, setOpenGenerateCSV] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('Initializing Virtual Fitting...');
 
   const initialLoadDone = useRef(false);
@@ -29,6 +27,26 @@ export const UiComp = observer(() => {
     const loadInitialModels = async () => {
       viewManager.setIsInitialLoading(true);
 
+      try {
+        setLoadingMessage('Fetching models from database...');
+        const apiModels = await fetchAllModelDetails();
+
+        setLoadingMessage('Loading 3D Model Geometries and Landmarks...');
+        for (const apiModel of apiModels) {
+          try {
+            await meshesManager.addApiModel(apiModel);
+          } catch (error) {
+            console.error(`Failed to load API model: ${apiModel.model_name}`, error);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch models from API', error);
+      }
+
+      // ─── LOCAL FALLBACK ────────────────────────────────────────────────────────
+      // This is currently disabled to test the API directly.
+      // Uncomment or use if API fails or returns no models.
+      /*
       const categories = APP_CONFIG.initialModels;
 
       // Stage 1: Load Models
@@ -54,12 +72,13 @@ export const UiComp = observer(() => {
       // Stage 2: Load Landmarks
       setLoadingMessage('Processing Landmark Cache & Raycasting...');
       await meshesManager.loadAllStaticLandmarks();
-
+      */
+      
       viewManager.setIsInitialLoading(false);
     };
 
     loadInitialModels();
-  }, [meshesManager]);
+  }, [meshesManager, viewManager]);
 
   // const handleUploadImages = () => {
   //   setUploadImagesModalOpen(true);
@@ -190,11 +209,7 @@ export const UiComp = observer(() => {
         )}
       </Box>
 
-      {/* Modals */}
-      <RunTestModal
-        open={runTestModalOpen}
-        onClose={() => setRunTestModalOpen(false)}
-      />
+
 
       <FileUpload
         open={upload3DModalOpen}
