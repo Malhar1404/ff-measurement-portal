@@ -9,6 +9,7 @@ import {
 import { Utils3D } from '../utils/Utils3D';
 import { SkirtInstance } from './SkirtInstance';
 import { StateManager } from './StateManager';
+import { ModelStatus } from '../types/api';
 
 export interface SerializedSlicePoint {
   x: number;
@@ -91,10 +92,6 @@ export class MeshManager {
 
   setLineData(lineData: BodyMeasurementPoints) {
     this.lineData = lineData;
-  }
-
-  setLandmarkResponse(response: any) {
-    this.landmarkResponse = response;
   }
 
   setMeasurementResponse(response: any) {
@@ -208,7 +205,7 @@ export class MeshManager {
     }
   }
 
-  processLandmarkResponse(data: any) {
+  processLandmarkResponse(data: any,model_status:ModelStatus) {
     this.landmarkResponse = data;
 
     // Process core landmarks
@@ -235,7 +232,7 @@ export class MeshManager {
     }
 
     const landmarkObjects = lms.map((l, i) => ({
-      color: 'yellow',
+      color: model_status === 'approved' ? 'green' : model_status === 'pending' ? 'red' : 'yellow',
       name: l.name,
       originalPosition: corrected[i].clone(),
       originalSliceData: mesh
@@ -313,6 +310,9 @@ export class MeshManager {
 
   get isApproved() {
     return this.allMeshLandmarksSaved;
+  }
+  get isPending() {
+    return !this.allMeshLandmarksSaved && this.unsavedMeshLandmarks.length > 0;
   }
 
   get meshLandmarksSavedCount() {

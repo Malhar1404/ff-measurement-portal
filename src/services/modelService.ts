@@ -14,7 +14,6 @@ import {
 // ─────────────────────────────────────────────────────────────────────────────
 export async function fetchAllModelDetails(): Promise<ApiModelDetail[]> {
   const response = await apiClient.get<FetchAllModelsResponse>('api/model-details');
-  debugger
   return response.data.model_details;
 }
 
@@ -27,6 +26,13 @@ export async function updateModelStatus(
   const response = await apiClient.put<UpdateStatusResponse>(
     'api/update-status',
     payload,
+  );
+  return response.data;
+}
+
+export async function getModelStatus(modelId: string) {
+  const response = await apiClient.get<UpdateStatusResponse>(
+    `api/model-status/${modelId}`,
   );
   return response.data;
 }

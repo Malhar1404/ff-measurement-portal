@@ -22,27 +22,12 @@ import {
   Typography,
 } from '@mui/material';
 import { observer } from 'mobx-react-lite';
-import { ChangeEvent, SyntheticEvent, useRef } from 'react';
+import {  SyntheticEvent } from 'react';
 
 import { useMainContext } from '../../hooks/useMainContext';
 
 export const Sidebar = observer(() => {
   const { meshesManager, viewManager } = useMainContext();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      const category = viewManager.activeCategoryTab;
-      await meshesManager.addGLBUrl(url, file.name, category);
-      viewManager.addLog(`Loaded ${category} model: ${file.name}`, 'info');
-    }
-    // Reset input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
 
   return (
     <Paper
@@ -63,14 +48,6 @@ export const Sidebar = observer(() => {
         <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 0 }}>
           Model Assets
         </Typography>
-        <input
-          type="file"
-          accept=".glb,.gltf"
-          style={{ display: 'none' }}
-          ref={fileInputRef}
-          onChange={handleFileChange}
-        />
-        
       </Box>
 
       <Divider />
@@ -110,9 +87,9 @@ export const Sidebar = observer(() => {
                     <CheckCircle
                       fontSize="small"
                       sx={{
-                        color: model.isApproved
+                        color:  model.isApproved
                           ? 'success.main'
-                          : model.meshLandmarksSavedCount > 0
+                          :  model.isPending
                             ? 'warning.main'
                             : 'rgba(148, 163, 184, 0.45)',
                       }}

@@ -94,10 +94,10 @@ export const GlbViewer = observer(() => {
           <primitive
             key={scene.uuid}
             object={scene}
-            onClick={(e: any) => {
-              e.stopPropagation();
-              meshesManager.setSelectedModelId(scene.uuid);
-            }}
+            // onClick={(e: any) => {
+            //   e.stopPropagation();
+            //   meshesManager.setSelectedModelId(scene.uuid);
+            // }}
           />
         );
       })}
@@ -214,23 +214,24 @@ const LandmarkPoint = observer(({
           color="#8b949e"
           depthTest={false}
           lineWidth={1.9}
-          renderOrder={0}
+          renderOrder={999}
         />
       )}
 
-      {(isSelected || hasMoved) && contourLinePoints.length > 1 && (
+      {contourLinePoints.length > 1 && (
         <Line
           points={contourLinePoints}
           color={contourColor}
           depthTest={false}
           lineWidth={2.2}
-          renderOrder={0}
+          renderOrder={999}
         />
       )}
 
       {(hasMoved || isSelected) && (
         <mesh
           raycast={() => null}
+          renderOrder={999}
           position={[
             originalPosition.x,
             originalPosition.y,
@@ -243,6 +244,7 @@ const LandmarkPoint = observer(({
             emissiveIntensity={0.08}
             opacity={0.45}
             transparent
+            depthTest={false}
           />
         </mesh>
       )}
@@ -253,7 +255,7 @@ const LandmarkPoint = observer(({
           color="#e8ff68"
           depthTest={false}
           lineWidth={2}
-          renderOrder={0}
+          renderOrder={999}
         />
       )}
 
@@ -263,7 +265,7 @@ const LandmarkPoint = observer(({
           color={controlColor}
           depthTest={false}
           lineWidth={2.6}
-          renderOrder={0}
+          renderOrder={999}
         />
       )}
 
@@ -273,6 +275,7 @@ const LandmarkPoint = observer(({
           point.position.y as number,
           point.position.z as number,
         ]}
+        renderOrder={999}
         scale={isSelected ? [1.35, 1.35, 1.35] : [1, 1, 1]}
         onPointerDown={(e: any) => handleLandmarkPointerDown(e, point.name)}
         onClick={(e: any) => handleLandmarkClick(e, point.name)}>
@@ -281,6 +284,7 @@ const LandmarkPoint = observer(({
           color={point.color || defaultMeshPointColor}
           emissive={isSelected ? '#ffffff' : '#000000'}
           emissiveIntensity={isSelected ? 0.35 : 0}
+          depthTest={false}
         />
       </mesh>
 
@@ -308,6 +312,7 @@ const LandmarkPoint = observer(({
             handlePosition.y,
             handlePosition.z,
           ]}
+          renderOrder={999}
           onPointerDown={(e: any) => handleLandmarkPointerDown(e, point.name)}
           onClick={(e: any) => handleLandmarkClick(e, point.name)}>
           <sphereGeometry args={[2.5, 32, 32]} />

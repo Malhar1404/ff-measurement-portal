@@ -21,6 +21,7 @@ import { SyntheticEvent, useState } from 'react';
 
 import { useMainContext } from '../../hooks/useMainContext';
 import CommentsBox from './CommentBox';
+import { updateModelStatus } from '../../services/modelService';
 
 type SidebarTab = 'landmarks' | 'images';
 
@@ -31,6 +32,7 @@ export const ModelDetailsSidebar = observer(() => {
   const meshLandmarks = selectedModel?.landmarks['Mesh landmarks'] || [];
   const modelImages = selectedModel?.images || [];
   const selectedLandmarkName = selectedModel?.selectedMeshLandmarkName ?? null;
+  console.log(selectedModel?.landmarks['Mesh landmarks'].map((landmark) => landmark.color));
 
   const [activeTab, setActiveTab] = useState<SidebarTab>('landmarks');
 
@@ -38,8 +40,6 @@ export const ModelDetailsSidebar = observer(() => {
     setActiveTab(value);
   };
 
-  const formatCoordinate = (value?: number) =>
-    typeof value === 'number' ? value.toFixed(2) : '--';
 
   const formatLandmarkLabel = (name: string) =>
     name
@@ -53,10 +53,35 @@ export const ModelDetailsSidebar = observer(() => {
 
   const handleEditLandmark = (landmarkName: string) => {
     selectedModel?.markMeshLandmarkEditing(landmarkName);
+    if (selectedModel?.dbId) {
+      updateModelStatus({
+        model_id: selectedModel.dbId,
+        status: 'pending',
+      });
+    }
+    else {
+      enqueueSnackbar('Failed to update model status.', {
+        variant: 'error',
+      });
+    }
   };
 
   const handleSaveLandmark = (landmarkName: string) => {
     selectedModel?.markMeshLandmarkSaved(landmarkName);
+    const isApproved = selectedModel?.isApproved;
+    if(isApproved) {
+      if (selectedModel?.dbId) {
+        updateModelStatus({
+          model_id: selectedModel.dbId,
+          status: 'approved',
+        });
+      }
+      else {
+        enqueueSnackbar('Failed to update model status.', {
+          variant: 'error',
+        });
+      }
+    }
   };
 
   const handleSaveLandmarks = () => {
@@ -73,6 +98,8 @@ export const ModelDetailsSidebar = observer(() => {
 
     meshesManager.exportLandmarks();
   };
+
+  
 
   const getLandmarkStatusStyles = (color?: string) => {
     switch (color) {
@@ -200,7 +227,7 @@ export const ModelDetailsSidebar = observer(() => {
                 meshLandmarks.map((landmark) => {
                   const isSelected = selectedLandmarkName === landmark.name;
                   const statusStyles = getLandmarkStatusStyles(landmark.color);
-
+                  
                   return (
                     <Box
                       key={landmark.name}

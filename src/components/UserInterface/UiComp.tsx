@@ -188,25 +188,32 @@ export const UiComp = observer(() => {
             </IconButton>
           </Box>
         ) : (
-          <>
-            {/* 3D Viewer Area */}
-            <Box
-              sx={{
-                flex: 1,
-                m: 0, // Fill entire space
-                overflow: 'hidden',
-                position: 'relative',
-              }}>
-              <Viewer3D />
+  viewManager.isInitialLoading ? (
+    null
+  ) : (
+    <>
+      {/* 3D Viewer Area */}
+      <Box
+        sx={{
+          flex: 1,
+          m: 0,
+          overflow: 'hidden',
+          position: 'relative',
+        }}
+      >
+        <Viewer3D />
 
-              {/* Left-side assets panel */}
-              <Sidebar />
-            </Box>
+        {/* Left-side assets panel */}
+        <Sidebar />
+      </Box>
 
-            {/* Right-side model details panel */}
-            <ModelDetailsSidebar />
-          </>
-        )}
+      {/* Right-side model details panel */}
+      <ModelDetailsSidebar />
+    </>
+  )
+)
+          }
+
       </Box>
 
 

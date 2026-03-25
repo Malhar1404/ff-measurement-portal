@@ -1,6 +1,6 @@
 import { makeAutoObservable, ObservableMap, reaction } from 'mobx';
 import * as THREE from 'three';
-import { ApiModelDetail } from '../types/api';
+import { ApiModelDetail, ModelStatus } from '../types/api';
 
 
 import { APP_CONFIG } from '../config/appConfig';
@@ -160,43 +160,43 @@ export class MeshesManager {
     );
   }
 
-  async loadLandmarksFromCache(model: MeshManager) {
-    const fileName = model.fileName;
-    if (!fileName) return;
+  // async loadLandmarksFromCache(model: MeshManager) {
+  //   const fileName = model.fileName;
+  //   if (!fileName) return;
 
-    const baseName = fileName.split('.')[0];
-    const jsonPath = `/landmark_json/${baseName}_landmarks.json`;
+  //   const baseName = fileName.split('.')[0];
+  //   const jsonPath = `/landmark_json/${baseName}_landmarks.json`;
 
-    try {
-      const response = await fetch(jsonPath);
-      if (response.ok) {
-        const data = await response.json();
-        // The JSON might be { "filename": {data} } or just {data}
-        // User's export format was { "filename": {data} }
-        const landmarkData = data[fileName] || data;
-        model.processLandmarkResponse(landmarkData);
-        this._libState.viewManager.addLog(
-          `Loaded static landmarks: ${jsonPath}`,
-          'success',
-        );
-        return;
-      }
-    } catch (e) {
-      console.warn(
-        `Could not fetch static landmark JSON for ${fileName} at ${jsonPath}`,
-      );
-    }
+  //   try {
+  //     const response = await fetch(jsonPath);
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       // The JSON might be { "filename": {data} } or just {data}
+  //       // User's export format was { "filename": {data} }
+  //       const landmarkData = data[fileName] || data;
+  //       model.processLandmarkResponse(landmarkData,);
+  //       this._libState.viewManager.addLog(
+  //         `Loaded static landmarks: ${jsonPath}`,
+  //         'success',
+  //       );
+  //       return;
+  //     }
+  //   } catch (e) {
+  //     console.warn(
+  //       `Could not fetch static landmark JSON for ${fileName} at ${jsonPath}`,
+  //     );
+  //   }
 
-    // Fallback to predefinedLandmarks.json (the hardcoded bundle)
-    if ((cachedLandmarks as any)[fileName]) {
-      const data = (cachedLandmarks as any)[fileName];
-      model.processLandmarkResponse(data);
-      this._libState.viewManager.addLog(
-        `Applied hardcoded landmarks for: ${fileName}`,
-        'info',
-      );
-    }
-  }
+  //   // Fallback to predefinedLandmarks.json (the hardcoded bundle)
+  //   if ((cachedLandmarks as any)[fileName]) {
+  //     const data = (cachedLandmarks as any)[fileName];
+  //     model.processLandmarkResponse(data);
+  //     this._libState.viewManager.addLog(
+  //       `Applied hardcoded landmarks for: ${fileName}`,
+  //       'info',
+  //     );
+  //   }
+  // }
 
   loadImagesFromConfig(model: MeshManager) {
     const fileName = model.fileName;
@@ -239,9 +239,9 @@ export class MeshesManager {
       this.loadImagesFromConfig(model);
 
       // 🔥 AUTO-LOAD: Check if we have cached landmarks for this file
-      if (loadStaticLandmarks) {
-        await this.loadLandmarksFromCache(model);
-      }
+      // if (loadStaticLandmarks) {
+      //   await this.loadLandmarksFromCache(model);
+      // }
 
       // 🔥 Auto-select first model if none selected
       if (!this.selectedModelId) {
@@ -313,7 +313,7 @@ export class MeshesManager {
                 landmarkData = data[firstKey];
               }
             }
-            model.processLandmarkResponse(landmarkData);
+            model.processLandmarkResponse(landmarkData,apiModel.status);
             this._libState.viewManager.addLog(`Loaded landmarks for ${fileName}`, 'success');
           }
         } catch (e) {
@@ -335,13 +335,12 @@ export class MeshesManager {
     }
   };
 
-
-  async loadAllStaticLandmarks() {
-    const models = this.modelsList;
-    for (const model of models) {
-      await this.loadLandmarksFromCache(model);
-    }
-  }
+  // async loadAllStaticLandmarks() {
+  //   const models = this.modelsList;
+  //   for (const model of models) {
+  //     await this.loadLandmarksFromCache(model);
+  //   }
+  // }
 
   clear() {
     this._models.forEach((m) => m.skirt.clear());
