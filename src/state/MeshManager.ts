@@ -44,7 +44,6 @@ export class MeshManager {
   blobUrl: string;
   category: 'adult' | 'kid' = 'adult';
   images: string[] = [];
-  isApproved: boolean = false;
 
   // Data isolation
   landmarks: LandmarkType = {
@@ -86,9 +85,6 @@ export class MeshManager {
     this.updateSkirt();
   }
 
-  setApproved(value: boolean) {
-    this.isApproved = value;
-  }
 
   setLineData(lineData: BodyMeasurementPoints) {
     this.lineData = lineData;
@@ -310,6 +306,16 @@ export class MeshManager {
   get allMeshLandmarksSaved() {
     const meshLandmarks = this.landmarks['Mesh landmarks'];
     return meshLandmarks.length > 0 && this.unsavedMeshLandmarks.length === 0;
+  }
+
+  get isApproved() {
+    return this.allMeshLandmarksSaved;
+  }
+
+  get meshLandmarksSavedCount() {
+    return this.landmarks['Mesh landmarks'].filter(
+      (landmark) => landmark.color === 'green',
+    ).length;
   }
 
   serializeLandmarkSlice(sliceData?: MeshSliceResult | null): SerializedLandmarkSlice | undefined {

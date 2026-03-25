@@ -112,7 +112,9 @@ export const Sidebar = observer(() => {
                       sx={{
                         color: model.isApproved
                           ? 'success.main'
-                          : 'rgba(148, 163, 184, 0.45)',
+                          : model.meshLandmarksSavedCount > 0
+                            ? 'warning.main'
+                            : 'rgba(148, 163, 184, 0.45)',
                       }}
                     />
                   </Box>

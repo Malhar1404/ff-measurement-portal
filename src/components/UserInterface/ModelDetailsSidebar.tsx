@@ -20,10 +20,9 @@ import { useSnackbar } from 'notistack';
 import { SyntheticEvent, useState } from 'react';
 
 import { useMainContext } from '../../hooks/useMainContext';
-import CommentsBox from './Commentbox';
+import CommentsBox from './CommentBox';
 
 type SidebarTab = 'landmarks' | 'images';
-type LandmarkCoordinate = 'x' | 'y' | 'z';
 
 export const ModelDetailsSidebar = observer(() => {
   const { meshesManager, viewManager } = useMainContext();
@@ -73,24 +72,6 @@ export const ModelDetailsSidebar = observer(() => {
     }
 
     meshesManager.exportLandmarks();
-  };
-
-  const handleApprove = () => {
-    if (!selectedModel) {
-      return;
-    }
-
-    if (!selectedModel.allMeshLandmarksSaved) {
-      enqueueSnackbar('Please save all 3 points before approving.', {
-        variant: 'error',
-      });
-      return;
-    }
-
-    selectedModel.setApproved(true);
-    enqueueSnackbar('Model approved successfully.', {
-      variant: 'success',
-    });
   };
 
   const getLandmarkStatusStyles = (color?: string) => {
@@ -379,25 +360,6 @@ export const ModelDetailsSidebar = observer(() => {
               gap: 1,
             }}
           >
-            {/* Approve */}
-            <Button
-              fullWidth
-              size="small"
-              variant="contained"
-              color="success"
-              startIcon={<Check />}
-              onClick={handleApprove}
-              disabled={!selectedModel?.hasLandmarks}
-              sx={{
-                borderRadius: 2,
-                fontSize: '0.7rem',
-                py: 0.6,
-                textTransform: 'none',
-                fontWeight: 500,
-              }}
-            >
-              Approve
-            </Button>
 
             {/* Save Draft */}
             <Button
