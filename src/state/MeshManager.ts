@@ -330,7 +330,7 @@ export class MeshManager {
     return this.allMeshLandmarksSaved;
   }
   get isPending() {
-    return !this.allMeshLandmarksSaved && this.unsavedMeshLandmarks.length > 0;
+    return !this.allMeshLandmarksSaved && this.unsavedMeshLandmarks.length < 3;
   }
 
   get meshLandmarksSavedCount() {
