@@ -107,29 +107,29 @@ export const useMeshLandmarkDrag = ({
       suppressClickRef.current = true;
     };
 
-    const handlePointerUp = () => {
-      const landmarkName = draggedLandmarkNameRef.current;
+   const handlePointerUp = () => {
+  const landmarkName = draggedLandmarkNameRef.current;
 
-      if (!landmarkName) {
-        return;
-      }
+  if (!landmarkName) {
+    return;
+  }
 
-      const selectedModel = meshesManager.selectedModel;
-      if (selectedModel) {
-        selectedModel.commitMeshLandmarkSlice(
-          landmarkName,
-          computeSliceForLandmark(landmarkName),
-        );
-      }
+  const selectedModel = meshesManager.selectedModel;
+  if (selectedModel) {
+    const slice = computeSliceForLandmark(landmarkName);
+    selectedModel.commitMeshLandmarkSlice(landmarkName, slice);
+    // Also update positionSliceData so the contour stays at the dropped position
+    selectedModel.updateMeshLandmarkPositionSlice(landmarkName, slice);
+  }
 
-      draggedLandmarkNameRef.current = null;
-      suppressClickRef.current = hasDraggedRef.current;
-      hasDraggedRef.current = false;
+  draggedLandmarkNameRef.current = null;
+  suppressClickRef.current = hasDraggedRef.current;
+  hasDraggedRef.current = false;
 
-      if (cameraManager.cameraRef) {
-        cameraManager.cameraRef.enabled = cameraEnabledRef.current;
-      }
-    };
+  if (cameraManager.cameraRef) {
+    cameraManager.cameraRef.enabled = cameraEnabledRef.current;
+  }
+};
 
     window.addEventListener('pointermove', handlePointerMove);
     window.addEventListener('pointerup', handlePointerUp);

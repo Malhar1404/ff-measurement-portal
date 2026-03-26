@@ -161,15 +161,21 @@ const LandmarkPoint = observer(({
     slicePreview?: {
       largestContour: THREE.Vector3[];
     } | null;
+    positionSliceData?:{
+      largestContour: THREE.Vector3[];
+    } | null
   };
 }) => {
   const originalPosition = point.originalPosition ?? point.position;
-  console.log(originalPosition);
+
   
   const hasMoved = originalPosition.distanceToSquared(point.position) > 0.0001;
   const connectorPoints = [originalPosition, point.position];
   const activeContour =
-    point.slicePreview?.largestContour ?? point.sliceData?.largestContour ?? [];
+  point.slicePreview?.largestContour ??
+  point.positionSliceData?.largestContour ??
+  point.sliceData?.largestContour ??
+  [];
   const originalContour = point.originalSliceData?.largestContour ?? [];
   const contourLinePoints =
     activeContour.length > 2 ? [...activeContour, activeContour[0]] : activeContour;
@@ -185,9 +191,6 @@ const LandmarkPoint = observer(({
   const controlAccentColor = isSelected
     ? (theme?.selectedAccent ?? '#1e40af')
     : (theme?.accent ?? '#0a2a66');
-  const grooveColor = isSelected
-    ? (theme?.selectedGroove ?? '#dbeafe')
-    : (theme?.groove ?? '#bfdbfe');
   const contourColor = theme?.contour ?? '#6df0ff';
   // Handle is always at BB center X offset to the left, fixed Z = BB center Z
   const handlePosition = new THREE.Vector3(

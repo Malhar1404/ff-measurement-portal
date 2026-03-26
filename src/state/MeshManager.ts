@@ -31,6 +31,7 @@ export interface SingleLandmark {
   position: THREE.Vector3;
   sliceData?: MeshSliceResult | null;
   slicePreview?: MeshSliceResult | null;
+  positionSliceData ?: MeshSliceResult | null;
 }
 
 export interface LandmarkType {
@@ -137,6 +138,15 @@ export class MeshManager {
     landmark.slicePreview = slicePreview;
   }
 
+  updateMeshLandmarkPositionSlice(landmarkName: string, slice: any) {
+  const landmark = this.landmarks['Mesh landmarks'].find(
+    (l) => l.name === landmarkName,
+  );
+  if (landmark) {
+    landmark.positionSliceData = slice;
+  }
+}
+
   commitMeshLandmarkSlice(
     landmarkName: string,
     sliceData: MeshSliceResult | null,
@@ -150,6 +160,7 @@ export class MeshManager {
     }
 
     landmark.sliceData = sliceData;
+    landmark.position 
     landmark.slicePreview = null;
   }
 
@@ -240,9 +251,12 @@ export class MeshManager {
       name: l.name,
       originalPosition:new THREE.Vector3(ogLandmarks_Array[i].x,ogLandmarks_Array[i].y,ogLandmarks_Array[i].z),
       originalSliceData: mesh
-        ? SkirtGeometryUtils.sliceMeshContoursAtY(mesh, corrected[i].y)
+        ? SkirtGeometryUtils.sliceMeshContoursAtY(mesh, ogLandmarks_Array[i].y)
         : null,
       position: corrected[i],
+      positionSliceData : mesh
+        ? SkirtGeometryUtils.sliceMeshContoursAtY(mesh, corrected[i].y)
+        : null,
       sliceData: this.deserializeLandmarkSlice(l.raw),
       slicePreview: null,
     }));

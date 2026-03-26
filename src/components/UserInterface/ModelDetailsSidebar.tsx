@@ -33,7 +33,7 @@ export const ModelDetailsSidebar = observer(() => {
   const meshLandmarks = selectedModel?.landmarks['Mesh landmarks'] || [];
   const modelImages = selectedModel?.images || [];
   const selectedLandmarkName = selectedModel?.selectedMeshLandmarkName ?? null;
-  console.log(selectedModel?.landmarks['Mesh landmarks'].map((landmark) => landmark.color));
+
 
   const [activeTab, setActiveTab] = useState<SidebarTab>('landmarks');
 
