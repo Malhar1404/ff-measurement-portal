@@ -34,6 +34,7 @@ export const UiComp = observer(() => {
         setLoadingMessage('Loading 3D Model Geometries and Landmarks...');
         for (const apiModel of apiModels) {
           try {
+            if(apiModel.model_name === 'Eliana') continue;
             await meshesManager.addApiModel(apiModel);
           } catch (error) {
             console.error(`Failed to load API model: ${apiModel.model_name}`, error);

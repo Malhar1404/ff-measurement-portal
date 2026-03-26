@@ -17,7 +17,7 @@ export class ViewManager {
   private _logs: LogEntry[] = [];
   private _isSkirtVisible = false;
   private _showDebugPoints = true;
-  private _activeCategoryTab: 'adult' | 'kid' = 'adult';
+  private _activeCategoryTab: 'adult' | 'kid' = 'kid';
   private _isInitialLoading = false;
   private _modelComment = ''
   private _comparisonImage: string | null = null;
