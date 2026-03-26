@@ -3,9 +3,10 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { LUTCubeLoader } from 'three/examples/jsm/loaders/LUTCubeLoader';
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader';
 
-import { Landmark } from '@/type';
+
 
 import { Logger } from './Logger';
+import { Landmark } from '../types';
 
 export class Utils3D {
   static gltfLoader = new GLTFLoader();

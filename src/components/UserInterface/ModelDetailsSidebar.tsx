@@ -21,7 +21,8 @@ import { SyntheticEvent, useState } from 'react';
 
 import { useMainContext } from '../../hooks/useMainContext';
 import CommentsBox from './CommentBox';
-import { addComment, updateModelStatus } from '../../services/modelService';
+import { addComment, updateLandmarkJson, updateModelStatus } from '../../services/modelService';
+import { downloadFile } from '../../utils/generalUtils';
 
 type SidebarTab = 'landmarks' | 'images';
 
@@ -70,10 +71,20 @@ export const ModelDetailsSidebar = observer(() => {
     selectedModel?.markMeshLandmarkSaved(landmarkName);
     const isApproved = selectedModel?.isApproved;
     if(isApproved) {
-      if (selectedModel?.dbId) {
+     try {
+       if (selectedModel?.dbId) {
         updateModelStatus({
           model_id: selectedModel.dbId,
           status: 'approved',
+        });
+         const exportData = meshesManager.exportLandmarks();
+        const backendPayload = {
+          model_id: selectedModel.dbId ? selectedModel.dbId : '',
+          json_data: exportData,
+        }
+        updateLandmarkJson(backendPayload);
+        enqueueSnackbar('Landmarks saved and uploaded successfully!', {
+          variant: 'success',
         });
       }
       else {
@@ -81,6 +92,11 @@ export const ModelDetailsSidebar = observer(() => {
           variant: 'error',
         });
       }
+     } catch (error) {
+      enqueueSnackbar('Failed to update model status.', {
+        variant: 'error',
+      })
+     }
     }
   };
 
@@ -96,10 +112,16 @@ export const ModelDetailsSidebar = observer(() => {
       return;
     }
 
-    meshesManager.exportLandmarks();
+    const exportData = meshesManager.exportLandmarks();
+    const fileName = Object.keys(exportData)[0];
+    downloadFile(exportData, fileName);
+    const backendPayload = {
+      model_id: selectedModel.dbId ? selectedModel.dbId : '',
+      json_data: exportData,
+    }
+    updateLandmarkJson(backendPayload);
   };
 
-  
 
   const getLandmarkStatusStyles = (color?: string) => {
     switch (color) {

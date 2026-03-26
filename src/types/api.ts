@@ -52,8 +52,7 @@ export type UpdateStatusResponse = {
 // ─── Update-json-url request/response ────────────────────────────────────────
 export type UpdateJsonUrlRequest = {
   model_id: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  json_data: Record<string, any>;
+  json_data: Record<string, Record<string, any>>;
 };
 
 export type UpdateJsonUrlResponse = {

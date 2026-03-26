@@ -96,14 +96,14 @@ export class MeshesManager {
     }
   }
 
-  exportLandmarks() {
+  exportLandmarks() :Record<string, Record<string, any>>{
     const selected = this.selectedModel;
     if (!selected || selected.landmarks['Mesh landmarks'].length === 0) {
       this._libState.viewManager.addLog(
         'No landmark data for selected model to export.',
         'warning',
       );
-      return;
+      return {};
     }
 
     if (!selected.allMeshLandmarksSaved) {
@@ -111,7 +111,7 @@ export class MeshesManager {
         'Save all mesh landmarks before exporting JSON.',
         'warning',
       );
-      return;
+      return {};
     }
 
     const rawFileName = selected.fileName || 'model.glb';
@@ -123,7 +123,6 @@ export class MeshesManager {
       formatPart(now.getMonth() + 1),
       formatPart(now.getDate()),
     ].join('-');
-    const exportFileName = `${baseName}_landmarks_${timestamp}.json`;
 
     const meshLandmarks = selected.landmarks['Mesh landmarks'].reduce(
       (acc, landmark) => {
@@ -132,7 +131,18 @@ export class MeshesManager {
           x: landmark.position.x,
           y: landmark.position.y,
           z: landmark.position.z,
-          ...(serializedSlice ? { slice: serializedSlice } : {}),
+        };
+        return acc;
+      },
+      {} as Record<string, any>,
+    );
+    const mediapipe_landmarks = selected.landmarks['MediaPipe landmarks'].reduce(
+      (acc, landmark) => {
+        const serializedSlice = selected.serializeLandmarkSlice(landmark.sliceData);
+        acc[landmark.name] = {
+          x: landmark.position.x,
+          y: landmark.position.y,
+          z: landmark.position.z,
         };
         return acc;
       },
@@ -142,22 +152,10 @@ export class MeshesManager {
     const exportData = {
       [rawFileName]: {
         mesh_landmarks: meshLandmarks,
+        mediapipe_landmarks: mediapipe_landmarks,
       },
     };
-
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], {
-      type: 'application/json',
-    });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = exportFileName;
-    link.click();
-    URL.revokeObjectURL(url);
-    this._libState.viewManager.addLog(
-      `Landmarks exported to ${exportFileName}`,
-      'info',
-    );
+    return exportData;
   }
 
   // async loadLandmarksFromCache(model: MeshManager) {
@@ -261,7 +259,7 @@ export class MeshesManager {
       if (!apiModel.model_glb_url) {
         throw new Error('GLB URL missing for API model');
       }
-
+      
       // 1. Load GLB
       const scene = await Utils3D.loadGLTF(apiModel.model_glb_url);
 
@@ -302,11 +300,12 @@ export class MeshesManager {
       // 2. Automatically load landmarks from S3 if URL provided
       if (apiModel.landmarks_url) {
         try {
-          const response = await fetch(apiModel.landmarks_url);
+          const response = await fetch(`${apiModel.landmarks_url}?t=${Date.now()}`);
           if (response.ok) {
             const data = await response.json();
             // Handle different JSON structures (top-level mesh_landmarks or wrapped in filename)
             let landmarkData = data;
+            debugger
             if (!data.mesh_landmarks && Object.keys(data).length > 0) {
               const firstKey = Object.keys(data)[0];
               if (data[firstKey] && data[firstKey].mesh_landmarks) {
