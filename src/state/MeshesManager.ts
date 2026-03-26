@@ -115,18 +115,9 @@ export class MeshesManager {
     }
 
     const rawFileName = selected.fileName || 'model.glb';
-    const baseName = rawFileName.split('.')[0];
-    const now = new Date();
-    const formatPart = (value: number) => value.toString().padStart(2, '0');
-    const timestamp = [
-      now.getFullYear(),
-      formatPart(now.getMonth() + 1),
-      formatPart(now.getDate()),
-    ].join('-');
 
     const meshLandmarks = selected.landmarks['Mesh landmarks'].reduce(
       (acc, landmark) => {
-        const serializedSlice = selected.serializeLandmarkSlice(landmark.sliceData);
         acc[landmark.name] = {
           x: landmark.position.x,
           y: landmark.position.y,
@@ -138,7 +129,6 @@ export class MeshesManager {
     );
     const mediapipe_landmarks = selected.landmarks['MediaPipe landmarks'].reduce(
       (acc, landmark) => {
-        const serializedSlice = selected.serializeLandmarkSlice(landmark.sliceData);
         acc[landmark.name] = {
           x: landmark.position.x,
           y: landmark.position.y,
@@ -296,23 +286,24 @@ export class MeshesManager {
       }
 
       this._models.set(scene.uuid, model);
-
       // 2. Automatically load landmarks from S3 if URL provided
       if (apiModel.landmarks_url) {
         try {
           const response = await fetch(`${apiModel.landmarks_url}?t=${Date.now()}`);
-          if (response.ok) {
+          const originalLandmarks = await fetch(`/landmark_json/${apiModel.model_name}_landmarks.json`);
+          if (response.ok && originalLandmarks.ok) {
             const data = await response.json();
+            const ogLandmarks = await originalLandmarks.json();
+            
             // Handle different JSON structures (top-level mesh_landmarks or wrapped in filename)
             let landmarkData = data;
-            debugger
             if (!data.mesh_landmarks && Object.keys(data).length > 0) {
               const firstKey = Object.keys(data)[0];
               if (data[firstKey] && data[firstKey].mesh_landmarks) {
                 landmarkData = data[firstKey];
               }
             }
-            model.processLandmarkResponse(landmarkData,apiModel.status);
+            model.processLandmarkResponse(landmarkData,apiModel.status,Object.values(ogLandmarks));
             this._libState.viewManager.addLog(`Loaded landmarks for ${fileName}`, 'success');
           }
         } catch (e) {

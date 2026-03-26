@@ -164,6 +164,8 @@ const LandmarkPoint = observer(({
   };
 }) => {
   const originalPosition = point.originalPosition ?? point.position;
+  console.log(originalPosition);
+  
   const hasMoved = originalPosition.distanceToSquared(point.position) > 0.0001;
   const connectorPoints = [originalPosition, point.position];
   const activeContour =

@@ -205,9 +205,8 @@ export class MeshManager {
     }
   }
 
-  processLandmarkResponse(data: any,model_status:ModelStatus) {
+  processLandmarkResponse(data: any,model_status:ModelStatus,ogLandmarks:any) {
     this.landmarkResponse = data;
-
     // Process core landmarks
     const meshLm = data.mesh_landmarks;
     if (!meshLm) return;
@@ -230,11 +229,16 @@ export class MeshManager {
     if (mesh) {
       mesh.updateWorldMatrix(true, true);
     }
+    
+   const ogLandmarks_Array = Object.values(
+  ogLandmarks[0].mesh_landmarks
+) as { x: number, y: number, z: number }[];
 
+    
     const landmarkObjects = lms.map((l, i) => ({
       color: model_status === 'approved' ? 'green' : model_status === 'pending' ? 'red' : 'yellow',
       name: l.name,
-      originalPosition: corrected[i].clone(),
+      originalPosition:new THREE.Vector3(ogLandmarks_Array[i].x,ogLandmarks_Array[i].y,ogLandmarks_Array[i].z),
       originalSliceData: mesh
         ? SkirtGeometryUtils.sliceMeshContoursAtY(mesh, corrected[i].y)
         : null,
