@@ -48,7 +48,7 @@ export class SkirtGeometryUtils {
             return;
           }
 
-          const threshold = 1e-5;
+          const threshold = 1e-6;
           const alreadyExists = intersects.some(
             (point) => point.distanceToSquared(intersection) < threshold,
           );
