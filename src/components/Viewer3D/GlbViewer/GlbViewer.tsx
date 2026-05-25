@@ -193,16 +193,32 @@ const LandmarkPoint = observer(({
     : (theme?.accent ?? '#0a2a66');
   const contourColor = theme?.contour ?? '#6df0ff';
   // Handle is always at BB center X offset to the left, fixed Z = BB center Z
-  const handlePosition = new THREE.Vector3(
-    bbCenterX - leftGuideLength,
-    point.position.y,
-    bbCenterZ,
-  );
+  let closestPoint = null;
+let minDiff = Infinity;
+
+for (const p of contourLinePoints) {
+  const diff = Math.abs(p.z - bbCenterZ);
+  if (diff < minDiff) {
+    minDiff = diff;
+    closestPoint = p;
+  }
+}
+
+// Fallback safety (in case array is empty)
+if (!closestPoint) return;
+
+// Create handle position using closest point
+const handlePosition = new THREE.Vector3(
+  closestPoint.x - leftGuideLength,
+  closestPoint.y,
+  closestPoint.z
+);
+
   const guideLinePoints = [
     new THREE.Vector3(
-      bbCenterX,       // fixed: BB center X
-      point.position.y, // only Y changes
-      bbCenterZ,        // fixed: BB center Z
+       closestPoint.x - leftGuideLength,
+  closestPoint.y,
+  closestPoint.z       // fixed: BB center Z
     ),
     new THREE.Vector3(
       handlePosition.x,

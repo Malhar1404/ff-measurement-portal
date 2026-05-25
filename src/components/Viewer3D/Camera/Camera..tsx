@@ -1,13 +1,23 @@
-import { CameraControls } from '@react-three/drei';
+import { CameraControls, OrthographicCamera } from '@react-three/drei';
 import CameraControlsImpl from 'camera-controls';
 import { observer } from 'mobx-react-lite';
 
 import { useMainContext } from '../../../hooks/useMainContext';
 
 export const Camera = observer(() => {
-  const { cameraManager } = useMainContext();
+  const { cameraManager ,viewManager} = useMainContext();
+  const imageCompare = viewManager.comparisonImage
 
   return (
+    <>
+    {!imageCompare ? (
+      <OrthographicCamera
+        // makeDefault
+        position={[0, 0, 100]}
+        zoom={100}
+      />
+    ) : <perspectiveCamera  position={[0, 0, 100]}/>}
+    
     <CameraControls
       makeDefault
       mouseButtons={{
@@ -26,6 +36,6 @@ export const Camera = observer(() => {
           cameraManager.setCameraRef(camera);
         }
       }}
-    />
+    /></>
   );
 });
