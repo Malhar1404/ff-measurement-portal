@@ -4,7 +4,6 @@ import { ApiModelDetail, ModelStatus } from '../types/api';
 
 
 import { APP_CONFIG } from '../config/appConfig';
-import cachedLandmarks from '../config/predefinedLandmarks.json';
 import { Utils3D } from '../utils/Utils3D';
 import { LandmarkType, MeshManager } from './MeshManager';
 import { StateManager } from './StateManager';
@@ -76,6 +75,68 @@ export class MeshesManager {
   /* ===============================
      LANDMARK UPDATE
      =============================== */
+
+  private normalizeStaticLandmarkData(data: any) {
+    if (!data) return null;
+
+    if (data.mesh_landmarks) {
+      return data;
+    }
+
+    const firstKey = Object.keys(data)[0];
+    if (firstKey && data[firstKey]?.mesh_landmarks) {
+      return data[firstKey];
+    }
+
+    return null;
+  }
+
+  async loadLandmarksFromCache(model: MeshManager) {
+    const fileName = model.fileName;
+    if (!fileName) return;
+
+    const baseName = fileName.split('.').slice(0, -1).join('.') || fileName;
+    const jsonPath = `/landmark_json/${encodeURIComponent(baseName)}_landmarks.json`;
+
+    try {
+      const response = await fetch(jsonPath);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const rawData = await response.json();
+      const landmarkData = this.normalizeStaticLandmarkData(rawData);
+
+      if (!landmarkData) {
+        throw new Error(`Unexpected landmark JSON structure for ${fileName}`);
+      }
+
+      model.processLandmarkResponse(
+        landmarkData,
+        model.status,
+        [landmarkData],
+      );
+      this._libState.viewManager.addLog(
+        `Loaded local landmarks: ${jsonPath}`,
+        'success',
+      );
+    } catch (error) {
+      console.warn(
+        `Could not load static landmark JSON for ${fileName} at ${jsonPath}`,
+        error,
+      );
+      this._libState.viewManager.addLog(
+        `Failed to load local landmarks for ${fileName}`,
+        'warning',
+      );
+    }
+  }
+
+  async loadAllStaticLandmarks() {
+    for (const model of this.modelsList) {
+      await this.loadLandmarksFromCache(model);
+    }
+  }
 
   setLandmarkPositions(
     landmarkPositions: LandmarkType,
@@ -203,7 +264,7 @@ export class MeshesManager {
     glbUrl: string,
     fileName?: string,
     category: 'adult' | 'kid' = 'adult',
-    loadStaticLandmarks = true,
+    loadStaticLandmarks = false,
   ) => {
     try {
       const scene = await Utils3D.loadGLTF(glbUrl);
@@ -226,7 +287,7 @@ export class MeshesManager {
       this._models.set(scene.uuid, model);
       this.loadImagesFromConfig(model);
 
-      // 🔥 AUTO-LOAD: Check if we have cached landmarks for this file
+      // Local static landmark fallback kept for reference.
       // if (loadStaticLandmarks) {
       //   await this.loadLandmarksFromCache(model);
       // }
@@ -286,14 +347,12 @@ export class MeshesManager {
       }
 
       this._models.set(scene.uuid, model);
-      // 2. Automatically load landmarks from S3 if URL provided
+      // 2. Automatically load landmarks from backend if URL provided
       if (apiModel.landmarks_url) {
         try {
           const response = await fetch(`${apiModel.landmarks_url}?t=${Date.now()}`);
-          const originalLandmarks = await fetch(`/landmark_json/${apiModel.model_name}_landmarks.json`);
-          if (response.ok && originalLandmarks.ok) {
+          if (response.ok) {
             const data = await response.json();
-            const ogLandmarks = await originalLandmarks.json();
             
             // Handle different JSON structures (top-level mesh_landmarks or wrapped in filename)
             let landmarkData = data;
@@ -303,7 +362,7 @@ export class MeshesManager {
                 landmarkData = data[firstKey];
               }
             }
-            model.processLandmarkResponse(landmarkData,apiModel.status,Object.values(ogLandmarks));
+            model.processLandmarkResponse(landmarkData, apiModel.status, [landmarkData]);
             this._libState.viewManager.addLog(`Loaded landmarks for ${fileName}`, 'success');
           }
         } catch (e) {

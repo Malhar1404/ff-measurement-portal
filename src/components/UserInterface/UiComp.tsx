@@ -1,15 +1,15 @@
-import { Backdrop, Box, CircularProgress, CssBaseline, Stack, Typography, IconButton } from '@mui/material';
-import { Theme } from '@mui/material/styles';
 import { Close } from '@mui/icons-material';
+import { Backdrop, Box, CircularProgress, CssBaseline, IconButton, Stack, Typography } from '@mui/material';
+import { Theme } from '@mui/material/styles';
 import { observer } from 'mobx-react-lite';
 import { useEffect, useRef, useState } from 'react';
-import { APP_CONFIG } from '../../config/appConfig';
+
 import { fetchAllModelDetails } from '../../services/modelService';
 import { useMainContext } from '../../hooks/useMainContext';
-import { Viewer3D } from '../Viewer3D/Viewer3D';
 import { FileUpload } from './FileUpload';
 import { ModelDetailsSidebar } from './ModelDetailsSidebar';
 import { Sidebar } from './Sidebar';
+import { Viewer3D } from '../Viewer3D/Viewer3D';
 
 export const UiComp = observer(() => {
   const { meshesManager, viewManager } = useMainContext();
@@ -19,7 +19,7 @@ export const UiComp = observer(() => {
 
   const initialLoadDone = useRef(false);
 
-  // 🔥 Auto-load models from config on mount
+  // Auto-load models from backend on mount.
   useEffect(() => {
     if (initialLoadDone.current) return;
     initialLoadDone.current = true;
@@ -28,13 +28,12 @@ export const UiComp = observer(() => {
       viewManager.setIsInitialLoading(true);
 
       try {
-        setLoadingMessage('Fetching models from database...');
+        setLoadingMessage('Fetching models from backend...');
         const apiModels = await fetchAllModelDetails();
 
-        setLoadingMessage('Loading 3D Model Geometries and Landmarks...');
+        setLoadingMessage('Loading 3D model geometries and landmarks...');
         for (const apiModel of apiModels) {
           try {
-            if(apiModel.model_name === 'Eliana') continue;
             await meshesManager.addApiModel(apiModel);
           } catch (error) {
             console.error(`Failed to load API model: ${apiModel.model_name}`, error);
@@ -44,56 +43,16 @@ export const UiComp = observer(() => {
         console.error('Failed to fetch models from API', error);
       }
 
-      // ─── LOCAL FALLBACK ────────────────────────────────────────────────────────
-      // This is currently disabled to test the API directly.
-      // Uncomment or use if API fails or returns no models.
-      /*
-      const categories = APP_CONFIG.initialModels;
-
-      // Stage 1: Load Models
-      setLoadingMessage('Loading 3D Model Geometries...');
-      for (const path of categories.adults) {
-        try {
-          const fileName = path.split('/').pop()?.split('\\').pop() || 'Adult Model';
-          await meshesManager.addGLBUrl(path, fileName, 'adult', false);
-        } catch (error) {
-          console.error(`Failed to auto-load adult model: ${path}`, error);
-        }
-      }
-
-      for (const path of categories.kids) {
-        try {
-          const fileName = path.split('/').pop()?.split('\\').pop() || 'Kid Model';
-          await meshesManager.addGLBUrl(path, fileName, 'kid', false);
-        } catch (error) {
-          console.error(`Failed to auto-load kid model: ${path}`, error);
-        }
-      }
-
-      // Stage 2: Load Landmarks
-      setLoadingMessage('Processing Landmark Cache & Raycasting...');
-      await meshesManager.loadAllStaticLandmarks();
-      */
-      
       viewManager.setIsInitialLoading(false);
     };
 
     loadInitialModels();
   }, [meshesManager, viewManager]);
 
-  // const handleUploadImages = () => {
-  //   setUploadImagesModalOpen(true);
-  // };
-
-  // const handleGenerateCSV = () => {
-  //   setOpenGenerateCSV(true);
-  // };
-
   return (
     <Box sx={{ height: '100vh', width: '100vw', overflow: 'hidden' }}>
       <CssBaseline />
 
-      {/* Main Content Area */}
       <Box
         sx={{
           backgroundColor: '#f8f9fa',
@@ -103,8 +62,8 @@ export const UiComp = observer(() => {
           position: 'relative',
           overflow: 'hidden',
           width: '100%',
-        }}>
-
+        }}
+      >
         {viewManager.comparisonImage ? (
           <Box sx={{ display: 'flex', flex: 1, width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
             <Box sx={{ flex: 1, position: 'relative', borderRight: '1px solid #333', height: '100%', overflow: 'hidden' }}>
@@ -122,7 +81,6 @@ export const UiComp = observer(() => {
                 }}
               />
 
-              {/* Thumbnails Section */}
               <Box
                 sx={{
                   position: 'absolute',
@@ -156,7 +114,7 @@ export const UiComp = observer(() => {
                         opacity: 1,
                         transform: 'scale(1.05)',
                         border: '2px solid rgba(109, 240, 255, 0.7)',
-                      }
+                      },
                     }}
                   >
                     <img
@@ -188,36 +146,25 @@ export const UiComp = observer(() => {
               <Close />
             </IconButton>
           </Box>
-        ) : (
-  viewManager.isInitialLoading ? (
-    null
-  ) : (
-    <>
-      {/* 3D Viewer Area */}
-      <Box
-        sx={{
-          flex: 1,
-          m: 0,
-          overflow: 'hidden',
-          position: 'relative',
-        }}
-      >
-        <Viewer3D />
+        ) : viewManager.isInitialLoading ? null : (
+          <>
+            <Box
+              sx={{
+                flex: 1,
+                m: 0,
+                overflow: 'hidden',
+                position: 'relative',
+              }}
+            >
+              <Viewer3D />
 
-        {/* Left-side assets panel */}
-        <Sidebar />
+              <Sidebar />
+            </Box>
+
+            <ModelDetailsSidebar />
+          </>
+        )}
       </Box>
-
-      {/* Right-side model details panel */}
-      <ModelDetailsSidebar />
-    </>
-  )
-)
-          }
-
-      </Box>
-
-
 
       <FileUpload
         open={upload3DModalOpen}
@@ -233,7 +180,6 @@ export const UiComp = observer(() => {
         accept=".jpg,.jpeg,.png,.gif,.bmp,.webp"
       />
 
-      {/* Global Initial Loading Overlay */}
       <Backdrop
         sx={{
           color: '#fff',
@@ -241,7 +187,7 @@ export const UiComp = observer(() => {
           backgroundColor: 'rgba(0, 0, 0, 0.85)',
           display: 'flex',
           flexDirection: 'column',
-          gap: 2
+          gap: 2,
         }}
         open={viewManager.isInitialLoading}
       >

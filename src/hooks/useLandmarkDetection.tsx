@@ -1,5 +1,4 @@
 import { useMutation } from '@tanstack/react-query';
-import * as THREE from 'three';
 
 import apiClient from '../config/axiosConfig';
 import { MeshesManager } from '../state/MeshesManager';
@@ -12,9 +11,10 @@ interface LandmarkPoint3D {
 }
 
 interface MeshLandmarks {
-  chest_landmark: LandmarkPoint3D;
-  hip_landmark: LandmarkPoint3D;
+  mid_waist_landmark?: LandmarkPoint3D;
   narrow_waist_landmark: LandmarkPoint3D;
+  allstar_skirt_end_landmark?: LandmarkPoint3D;
+  school_skirt_end_landmark?: LandmarkPoint3D;
 }
 
 interface PoseLandmark {
@@ -51,11 +51,11 @@ interface MutationVars {
 }
 
 const extractLandmarks = async ({ file }: MutationVars): Promise<LandmarkResponse> => {
-  // const formData = new FormData();
-  // formData.append('file', file);
-  // const { data } = await apiClient.post<LandmarkResponse>('/landmarks', formData);
-  // return data;
-  throw new Error('Backend landmark detection is disabled. Use static JSONs in public/landmark_json/');
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const { data } = await apiClient.post<LandmarkResponse>('/landmarks', formData);
+  return data;
 };
 
 export const useLandmarkDetection = (
@@ -75,24 +75,20 @@ export const useLandmarkDetection = (
     },
     onSuccess: (data, variables) => {
       try {
-        let glbScene: THREE.Group | undefined;
+        const selectedModel = meshesManager.selectedModel;
         let targetId = variables.targetMeshUuid;
 
-        if (targetId) {
-            const model = meshesManager.modelsList.find(m => m.id === targetId);
-            glbScene = model?.scene;
-        } else {
+        if (!targetId) {
             targetId = meshesManager.selectedModelId || undefined;
-            glbScene = meshesManager.selectedModel?.scene;
         }
 
         if (targetId) {
-            const model = meshesManager.modelsList.find(m => m.id === targetId);
-            if (model) {
-                model.processLandmarkResponse(data);
-            }
+          const model = meshesManager.modelsList.find((m) => m.id === targetId);
+          if (model) {
+            model.processLandmarkResponse(data, model.status, [data]);
+          }
         } else {
-            meshesManager.selectedModel?.processLandmarkResponse(data);
+          selectedModel?.processLandmarkResponse(data, selectedModel?.status ?? 'not_checked', [data]);
         }
 
       } catch (error) {

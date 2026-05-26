@@ -47,7 +47,7 @@ export class MeshManager {
   category: 'adult' | 'kid' = 'adult';
   images: string[] = [];
   dbId: string | null = null;
-  status: string = 'not_checked';
+  status: ModelStatus = 'not_checked';
 
 
   // Data isolation
@@ -104,6 +104,45 @@ export class MeshManager {
   }
   setModelComment(comment: string) {
     this.modelComment = comment;
+  }
+  setStatus(status: ModelStatus) {
+    this.status = status;
+  }
+
+  private resolveLandmarkPoint(data: any, landmarkName: string) {
+    return (
+      data?.mesh_landmarks?.[landmarkName] ??
+      data?.pose_landmarks?.pose_landmarks?.[landmarkName]?.point_3d ??
+      null
+    );
+  }
+
+  private getLandmarkPointMap(data: any, landmarkNames: string[]) {
+    return landmarkNames
+      .map((name) => ({
+        name,
+        raw: this.resolveLandmarkPoint(data, name),
+      }))
+      .filter((landmark) => landmark.raw);
+  }
+
+  private getOriginalLandmarkPoint(
+    ogLandmarks: any,
+    landmarkName: string,
+    fallbackRaw: any,
+  ) {
+    const candidates = Array.isArray(ogLandmarks)
+      ? ogLandmarks
+      : [ogLandmarks];
+
+    for (const candidate of candidates) {
+      const rawPoint = this.resolveLandmarkPoint(candidate, landmarkName);
+      if (rawPoint) {
+        return rawPoint;
+      }
+    }
+
+    return this.extractLandmarkPosition(fallbackRaw);
   }
   updateMeshLandmarkPosition(
     landmarkName: string,
@@ -218,15 +257,16 @@ export class MeshManager {
 
   processLandmarkResponse(data: any,model_status:ModelStatus,ogLandmarks:any) {
     this.landmarkResponse = data;
-    // Process core landmarks
-    const meshLm = data.mesh_landmarks;
-    if (!meshLm) return;
+    const lms = this.getLandmarkPointMap(data, [
+      'mid_waist_landmark',
+      'narrow_waist_landmark',
+      'allstar_skirt_end_landmark',
+      'school_skirt_end_landmark',
+    ]);
 
-    const lms = [
-      { name: 'chest_landmark', raw: meshLm.chest_landmark },
-      { name: 'hip_landmark', raw: meshLm.hip_landmark },
-      { name: 'narrow_waist_landmark', raw: meshLm.narrow_waist_landmark },
-    ].filter((landmark) => landmark.raw);
+    if (lms.length === 0) {
+      return;
+    }
 
     const vectors = lms.map(
       (l) => {
@@ -240,26 +280,34 @@ export class MeshManager {
     if (mesh) {
       mesh.updateWorldMatrix(true, true);
     }
-    
-   const ogLandmarks_Array = Object.values(
-  ogLandmarks[0].mesh_landmarks
-) as { x: number, y: number, z: number }[];
 
-    
-    const landmarkObjects = lms.map((l, i) => ({
-      color: model_status === 'approved' ? 'green' : model_status === 'pending' ? 'red' : 'yellow',
-      name: l.name,
-      originalPosition:new THREE.Vector3(ogLandmarks_Array[i].x,ogLandmarks_Array[i].y,ogLandmarks_Array[i].z),
-      originalSliceData: mesh
-        ? SkirtGeometryUtils.sliceMeshContoursAtY(mesh, ogLandmarks_Array[i].y)
-        : null,
-      position: corrected[i],
-      positionSliceData : mesh
-        ? SkirtGeometryUtils.sliceMeshContoursAtY(mesh, corrected[i].y)
-        : null,
-      sliceData: this.deserializeLandmarkSlice(l.raw),
-      slicePreview: null,
-    }));
+    const landmarkObjects = lms.map((l, i) => {
+      const originalPoint = this.getOriginalLandmarkPoint(ogLandmarks, l.name, l.raw);
+
+      return {
+        color:
+          model_status === 'approved'
+            ? 'green'
+            : model_status === 'pending'
+              ? 'red'
+              : 'yellow',
+        name: l.name,
+        originalPosition: new THREE.Vector3(
+          originalPoint.x,
+          originalPoint.y,
+          originalPoint.z,
+        ),
+        originalSliceData: mesh
+          ? SkirtGeometryUtils.sliceMeshContoursAtY(mesh, originalPoint.y)
+          : null,
+        position: corrected[i],
+        positionSliceData: mesh
+          ? SkirtGeometryUtils.sliceMeshContoursAtY(mesh, corrected[i].y)
+          : null,
+        sliceData: this.deserializeLandmarkSlice(l.raw),
+        slicePreview: null,
+      };
+    });
 
     // Process pose landmarks
     const poseLandmarksGroup = data.pose_landmarks?.pose_landmarks;
@@ -433,14 +481,17 @@ export class MeshManager {
       mp.find((l) => l.name === waistLandmarkName)?.position ||
       meshLm.find((l) => l.name === waistLandmarkName)?.position;
 
-    const bottom = mp.find((l) => l.name === bottomLandmarkName)?.position;
-
-    const hip =
-      meshLm.find((l) => l.name === 'hip_landmark')?.position ||
-      mp.find((l) => l.name.includes('hip_landmark'))?.position;
+    const bottom =
+      mp.find((l) => l.name === bottomLandmarkName)?.position ||
+      meshLm.find((l) => l.name === bottomLandmarkName)?.position;
 
     if (waist && bottom) {
-      this.skirt.updateFromLandmarks(mesh, waist, bottom, hip);
+      const syntheticHip = new THREE.Vector3(
+        waist.x,
+        (waist.y + bottom.y) / 2,
+        waist.z,
+      );
+      this.skirt.updateFromLandmarks(mesh, waist, bottom, syntheticHip);
     }
   }
 

@@ -5,12 +5,11 @@ import { ViewManager } from '../state/ViewManager';
 import { BodyMeasurementPoints } from '../types';
 
 interface MeasurementResponse {
-  chest_measurement: number;
-  hip_measurement: number;
+  mid_waist_measurement: number;
   narrow_waist_measurement: number;
+  allstar_skirt_end_measurement: number;
+  school_skirt_end_measurement: number;
 }
-
-const API_BASE_URL = 'http://localhost:3001';
 
 // Define variables type for mutation
 interface MeasurementVars {
@@ -29,7 +28,7 @@ const extractMeasurements = async ({ glbFile, landmarkJson }: MeasurementVars): 
   });
   formData.append('landmark_json', jsonBlob, 'landmarks.json');
 
-  const response = await fetch(`${API_BASE_URL}/compute_measurements`, {
+  const response = await fetch('http://localhost:3001/compute_measurements', {
     body: formData,
     method: 'POST',
   });

@@ -21,7 +21,6 @@ import { SyntheticEvent, useState } from 'react';
 
 import { useMainContext } from '../../hooks/useMainContext';
 import CommentsBox from './CommentBox';
-import { addComment, updateLandmarkJson, updateModelStatus } from '../../services/modelService';
 import { downloadFile } from '../../utils/generalUtils';
 
 type SidebarTab = 'landmarks' | 'images';
@@ -54,49 +53,16 @@ export const ModelDetailsSidebar = observer(() => {
 
   const handleEditLandmark = (landmarkName: string) => {
     selectedModel?.markMeshLandmarkEditing(landmarkName);
-    if (selectedModel?.dbId) {
-      updateModelStatus({
-        model_id: selectedModel.dbId,
-        status: 'pending',
-      });
-    }
-    else {
-      enqueueSnackbar('Failed to update model status.', {
-        variant: 'error',
-      });
-    }
+    selectedModel?.setStatus('pending');
   };
 
   const handleSaveLandmark = (landmarkName: string) => {
     selectedModel?.markMeshLandmarkSaved(landmarkName);
-    const isApproved = selectedModel?.isApproved;
-    if(isApproved) {
-     try {
-       if (selectedModel?.dbId) {
-        updateModelStatus({
-          model_id: selectedModel.dbId,
-          status: 'approved',
-        });
-         const exportData = meshesManager.exportLandmarks();
-        const backendPayload = {
-          model_id: selectedModel.dbId ? selectedModel.dbId : '',
-          json_data: exportData,
-        }
-        updateLandmarkJson(backendPayload);
-        enqueueSnackbar('Landmarks saved and uploaded successfully!', {
-          variant: 'success',
-        });
-      }
-      else {
-        enqueueSnackbar('Failed to update model status.', {
-          variant: 'error',
-        });
-      }
-     } catch (error) {
-      enqueueSnackbar('Failed to update model status.', {
-        variant: 'error',
-      })
-     }
+    if (selectedModel?.isApproved) {
+      selectedModel.setStatus('approved');
+      enqueueSnackbar('Landmarks saved locally.', {
+        variant: 'success',
+      });
     }
   };
 
@@ -115,11 +81,6 @@ export const ModelDetailsSidebar = observer(() => {
     const exportData = meshesManager.exportLandmarks();
     const fileName = Object.keys(exportData)[0];
     downloadFile(exportData, fileName);
-    const backendPayload = {
-      model_id: selectedModel.dbId ? selectedModel.dbId : '',
-      json_data: exportData,
-    }
-    updateLandmarkJson(backendPayload);
   };
 
 
@@ -391,25 +352,11 @@ export const ModelDetailsSidebar = observer(() => {
             key={selectedModel?.id || 'no-model'}
             defaultValue={selectedModel?.modelComment ?? ''}
            onSubmit={(comment) => {
-  if (selectedModel && selectedModel.dbId) {
-    try {
-      addComment({
-        model_id: selectedModel.dbId,
-        comment,
-      });
-
-      selectedModel.setModelComment(comment);
-
-      enqueueSnackbar('Comment saved successfully.', {
-        variant: 'success',
-      });
-
-    } catch (error) {
-      console.error('Error saving comment:', error);
-      enqueueSnackbar('Error saving comment.', {
-        variant: 'error',
-      });
-    }
+  if (selectedModel) {
+    selectedModel.setModelComment(comment);
+    enqueueSnackbar('Comment saved locally.', {
+      variant: 'success',
+    });
   }
 }}
             disabled={!selectedModel}

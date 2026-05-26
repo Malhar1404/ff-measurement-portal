@@ -8,9 +8,10 @@ import { useMainContext } from '../../../hooks/useMainContext';
 import SkirtMesh from '../../SkirtCreation/SkirtMesh';
 
 const ALWAYS_VISIBLE_MEASUREMENT_LANDMARKS = new Set([
-  'chest_landmark',
-  'hip_landmark',
+  'mid_waist_landmark',
   'narrow_waist_landmark',
+  'allstar_skirt_end_landmark',
+  'school_skirt_end_landmark',
 ]);
 
 const LANDMARK_THEME: Record<
@@ -26,7 +27,7 @@ const LANDMARK_THEME: Record<
     label: string;
   }
 > = {
-  chest_landmark: {
+  mid_waist_landmark: {
     base: '#0e7490',
     accent: '#0891b2',
     groove: '#a5f3fc',
@@ -34,7 +35,7 @@ const LANDMARK_THEME: Record<
     selectedBase: '#06b6d4',
     selectedAccent: '#22d3ee',
     selectedGroove: '#cffafe',
-    label: 'Chest',
+    label: 'Mid Waist',
   },
   narrow_waist_landmark: {
     base: '#92400e',
@@ -44,9 +45,9 @@ const LANDMARK_THEME: Record<
     selectedBase: '#f59e0b',
     selectedAccent: '#fcd34d',
     selectedGroove: '#fef3c7',
-    label: 'Waist',
+    label: 'Narrow Waist',
   },
-  hip_landmark: {
+  allstar_skirt_end_landmark: {
     base: '#6b21a8',
     accent: '#7e22ce',
     groove: '#e9d5ff',
@@ -54,7 +55,17 @@ const LANDMARK_THEME: Record<
     selectedBase: '#a855f7',
     selectedAccent: '#c084fc',
     selectedGroove: '#f3e8ff',
-    label: 'Hip',
+    label: 'Allstar End',
+  },
+  school_skirt_end_landmark: {
+    base: '#14532d',
+    accent: '#166534',
+    groove: '#bbf7d0',
+    contour: '#4ade80',
+    selectedBase: '#22c55e',
+    selectedAccent: '#4ade80',
+    selectedGroove: '#dcfce7',
+    label: 'School End',
   },
 };
 
@@ -66,18 +77,17 @@ export const GlbViewer = observer(() => {
   const selectedModel = meshesManager.selectedModel;
   const meshPoints = selectedModel?.landmarks['Mesh landmarks'] || [];
   const defaultMeshPointColor = 'yellow';
-  const { leftGuideLength, bbCenterX, bbCenterZ } = (() => {
+  const { leftGuideLength, bbMaxX, bbCenterZ } = (() => {
     if (!selectedModel) {
-      return { leftGuideLength: 12, bbCenterX: 0, bbCenterZ: 0 };
+      return { leftGuideLength: 12, bbMaxX: 0, bbCenterZ: 0 };
     }
 
     const bb = new THREE.Box3().setFromObject(selectedModel.scene);
-    const size = bb.getSize(new THREE.Vector3());
     const center = bb.getCenter(new THREE.Vector3());
     return {
       leftGuideLength: 0,
-      bbCenterX: center.x,
-      bbCenterZ: size.z / 2,
+      bbMaxX: bb.max.x,
+      bbCenterZ: center.z,
     };
   })();
 
@@ -120,7 +130,7 @@ export const GlbViewer = observer(() => {
           handleLandmarkClick={handleLandmarkClick}
           handleLandmarkPointerDown={handleLandmarkPointerDown}
           leftGuideLength={leftGuideLength}
-          bbCenterX={bbCenterX}
+          bbMaxX={bbMaxX}
           bbCenterZ={bbCenterZ}
           isSelected={selectedModel?.selectedMeshLandmarkName === point.name}
           point={point}
@@ -135,7 +145,7 @@ const LandmarkPoint = observer(({
   handleLandmarkClick,
   handleLandmarkPointerDown,
   leftGuideLength,
-  bbCenterX,
+  bbMaxX,
   bbCenterZ,
   isSelected,
   point,
@@ -144,7 +154,7 @@ const LandmarkPoint = observer(({
   handleLandmarkClick: (event: any, landmarkName: string) => void;
   handleLandmarkPointerDown: (event: any, landmarkName: string) => void;
   leftGuideLength: number;
-  bbCenterX: number;
+  bbMaxX: number;
   bbCenterZ: number;
   isSelected: boolean;
   point: {
@@ -170,6 +180,7 @@ const LandmarkPoint = observer(({
 
   
   const hasMoved = originalPosition.distanceToSquared(point.position) > 0.0001;
+  const errorDeltaY = originalPosition.y - point.position.y;
   const connectorPoints = [originalPosition, point.position];
   const activeContour =
   point.slicePreview?.largestContour ??
@@ -227,6 +238,15 @@ const handlePosition = new THREE.Vector3(
     ),
   ];
 
+  const errorLineX = bbMaxX + 4;
+  const errorLineColor = errorDeltaY >= 0 ? '#ef4444' : '#22c55e';
+  const errorLinePoints = [
+    new THREE.Vector3(errorLineX, originalPosition.y, bbCenterZ),
+    new THREE.Vector3(errorLineX, point.position.y, bbCenterZ),
+  ];
+  const errorLabelY = (originalPosition.y + point.position.y) / 2;
+  const errorLabel = `${errorDeltaY >= 0 ? '+' : '-'}${Math.abs(errorDeltaY).toFixed(2)} mm`;
+
   return (
     <group>
       {originalContourLinePoints.length > 1 && (
@@ -267,6 +287,29 @@ const handlePosition = new THREE.Vector3(
           lineWidth={2.6}
           renderOrder={999}
         />
+      )}
+
+      {isSelected && hasMoved && (
+        <>
+          <Line
+            points={errorLinePoints}
+            color={errorLineColor}
+            depthTest={false}
+            lineWidth={3}
+            renderOrder={1000}
+          />
+          <Text
+            position={[errorLineX + 2.5, errorLabelY, bbCenterZ]}
+            fontSize={4}
+            color={errorLineColor}
+            anchorX="left"
+            anchorY="middle"
+            depthOffset={-2}
+            renderOrder={1001}
+          >
+            {errorLabel}
+          </Text>
+        </>
       )}
 
       <mesh

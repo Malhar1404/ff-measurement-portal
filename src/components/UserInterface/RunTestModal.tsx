@@ -16,7 +16,9 @@ import {
 import { observer } from 'mobx-react-lite';
 import { useState } from 'react';
 
+import { useLandmarkDetection } from '../../hooks/useLandmarkDetection';
 import { useMainContext } from '../../hooks/useMainContext';
+import { useMeasurementDetection } from '../../hooks/useMeasurementDetection';
 
 interface RunTestModalProps {
   open: boolean;
@@ -24,23 +26,19 @@ interface RunTestModalProps {
 }
 
 export const RunTestModal = observer(({ open, onClose }: RunTestModalProps) => {
-  const [selectedTest, setSelectedTest] = useState<
-    'landmark' | 'measurement' | ''
-  >('');
+  const [selectedTest, setSelectedTest] = useState<'landmark' | 'measurement' | ''>('');
   const { meshesManager, viewManager } = useMainContext();
+  const landmarkMutation = useLandmarkDetection(meshesManager, viewManager);
+  const measurementMutation = useMeasurementDetection(meshesManager, viewManager);
 
   const handleRunTest = async () => {
     if (selectedTest === 'landmark' && meshesManager.glbData.length > 0) {
-
-      // 🔥 Filter: Process only selected model if one is selected, else all
       const modelsToProcess = meshesManager.selectedModelId
-        ? meshesManager.glbData.filter(g => g.scene.uuid === meshesManager.selectedModelId)
+        ? meshesManager.glbData.filter((g) => g.scene.uuid === meshesManager.selectedModelId)
         : meshesManager.glbData;
 
-      // Iterate over target GLBs
       const promises = modelsToProcess.map(async (glbData) => {
         try {
-          // Convert blob URL back to File object for API call
           const response = await fetch(glbData.blobUrl);
           const blob = await response.blob();
           const file = new File([blob], glbData.fileName || 'model.glb', {
@@ -48,8 +46,6 @@ export const RunTestModal = observer(({ open, onClose }: RunTestModalProps) => {
           });
 
           const targetUuid = glbData.scene.uuid;
-
-          // Call the API with the actual GLB file and UUID
           await landmarkMutation.mutateAsync({ file, targetMeshUuid: targetUuid });
         } catch (error) {
           console.error('Error preparing GLB for landmark detection:', error);
@@ -68,14 +64,12 @@ export const RunTestModal = observer(({ open, onClose }: RunTestModalProps) => {
       meshesManager.glbData.length > 0 &&
       meshesManager.hasLandmarkData
     ) {
-      // 🔥 Filter: Process only selected model if one is selected, else all
       const modelsToProcess = meshesManager.selectedModelId
-        ? meshesManager.glbData.filter(g => g.scene.uuid === meshesManager.selectedModelId)
+        ? meshesManager.glbData.filter((g) => g.scene.uuid === meshesManager.selectedModelId)
         : meshesManager.glbData;
 
       const promises = modelsToProcess.map(async (glbData) => {
         try {
-          // Convert blob URL back to File object for API call
           const response = await fetch(glbData.blobUrl);
           const blob = await response.blob();
           const file = new File([blob], glbData.fileName || 'model.glb', {
@@ -83,16 +77,13 @@ export const RunTestModal = observer(({ open, onClose }: RunTestModalProps) => {
           });
 
           const targetId = glbData.scene.uuid;
-          const model = meshesManager.modelsList.find(m => m.id === targetId);
-
-          // Call the measurement API with GLB file and landmark JSON
-          // 🔥 We use the selected landmark response for the target model
+          const model = meshesManager.modelsList.find((m) => m.id === targetId);
           const landmarkJson = model?.landmarkResponse;
 
           await measurementMutation.mutateAsync({
             glbFile: file,
-            landmarkJson: landmarkJson,
-            targetId: targetId
+            landmarkJson,
+            targetId,
           });
         } catch (error) {
           console.error('Error preparing files for measurement computation:', error);
@@ -120,7 +111,8 @@ export const RunTestModal = observer(({ open, onClose }: RunTestModalProps) => {
           borderRadius: 2,
           boxShadow: 3,
         },
-      }}>
+      }}
+    >
       <DialogTitle>
         <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
           Run Test Configuration
@@ -134,9 +126,8 @@ export const RunTestModal = observer(({ open, onClose }: RunTestModalProps) => {
             </FormLabel>
             <RadioGroup
               value={selectedTest}
-              onChange={(e) =>
-                setSelectedTest(e.target.value as 'landmark' | 'measurement')
-              }>
+              onChange={(e) => setSelectedTest(e.target.value as 'landmark' | 'measurement')}
+            >
               <FormControlLabel
                 value="landmark"
                 control={<Radio color="primary" />}
@@ -148,9 +139,7 @@ export const RunTestModal = observer(({ open, onClose }: RunTestModalProps) => {
                 control={<Radio color="primary" />}
                 label={
                   <Box>
-                    <Typography component="span">
-                      Measurement Computation
-                    </Typography>
+                    <Typography component="span">Measurement Computation</Typography>
                     {!meshesManager.hasLandmarkData && (
                       <Typography
                         variant="caption"
@@ -158,7 +147,8 @@ export const RunTestModal = observer(({ open, onClose }: RunTestModalProps) => {
                           color: 'text.secondary',
                           display: 'block',
                           fontStyle: 'italic',
-                        }}>
+                        }}
+                      >
                         (Requires landmark detection to be run first)
                       </Typography>
                     )}
@@ -188,10 +178,9 @@ export const RunTestModal = observer(({ open, onClose }: RunTestModalProps) => {
           sx={{
             '&:hover': { backgroundColor: '#1565c0' },
             backgroundColor: '#1976d2',
-          }}>
-          {landmarkMutation.isPending || measurementMutation.isPending
-            ? 'Processing...'
-            : 'Run Test'}
+          }}
+        >
+          {landmarkMutation.isPending || measurementMutation.isPending ? 'Processing...' : 'Run Test'}
         </Button>
       </DialogActions>
     </Dialog>
