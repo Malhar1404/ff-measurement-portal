@@ -23,6 +23,7 @@ export type ApiModelDetail = {
   model_name: string;
   model_glb_url: string;
   landmarks_url: string | null;
+  original_landmarks_url: string | null;
   category: ModelCategory;
   status: ModelStatus;
   created_at: string;
@@ -53,11 +54,13 @@ export type UpdateStatusResponse = {
 export type UpdateJsonUrlRequest = {
   model_id: string;
   json_data: Record<string, Record<string, any>>;
+  original_json_data?: Record<string, Record<string, any>>;
 };
 
 export type UpdateJsonUrlResponse = {
   success: boolean;
   json_url: string;
+  original_json_url?: string;
 };
 
 export type AddCommentResponse = {

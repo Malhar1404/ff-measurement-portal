@@ -31,14 +31,8 @@ export const UiComp = observer(() => {
         setLoadingMessage('Fetching models from backend...');
         const apiModels = await fetchAllModelDetails();
 
-        setLoadingMessage('Loading 3D model geometries and landmarks...');
-        for (const apiModel of apiModels) {
-          try {
-            await meshesManager.addApiModel(apiModel);
-          } catch (error) {
-            console.error(`Failed to load API model: ${apiModel.model_name}`, error);
-          }
-        }
+        setLoadingMessage('Loading the first batch of models...');
+        await meshesManager.loadApiModelsStaged(apiModels, 10);
       } catch (error) {
         console.error('Failed to fetch models from API', error);
       }

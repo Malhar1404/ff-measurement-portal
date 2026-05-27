@@ -36,6 +36,11 @@ export class MeshesManager {
       return;
     }
 
+    if (id && this._models.has(id) && !this._models.get(id)!.isReady) {
+      this._libState.viewManager.addLog('That model is still loading.', 'warning');
+      return;
+    }
+
     this.selectedModelId = id;
 
     if (id && this._models.has(id)) {
@@ -60,7 +65,9 @@ export class MeshesManager {
   }
 
   get glbscenes() {
-    return this.modelsList.map((m) => m.scene);
+    return this.modelsList
+      .filter((m) => m.isReady)
+      .map((m) => m.scene);
   }
 
   // Compatibility getter for older components if needed
@@ -70,6 +77,40 @@ export class MeshesManager {
       fileName: m.fileName,
       scene: m.scene,
     }));
+  }
+
+  private createApiModelEntry(apiModel: ApiModelDetail) {
+    const placeholderScene = new THREE.Group();
+    placeholderScene.name = apiModel.model_name || 'Loading model';
+
+    const fileName =
+      apiModel.model_name ||
+      apiModel.model_glb_url.split('/').pop()?.split('\\').pop() ||
+      'Model';
+
+    const model = new MeshManager(
+      placeholderScene.uuid,
+      placeholderScene,
+      apiModel.model_glb_url,
+      this._libState,
+      fileName,
+      apiModel.category,
+    );
+
+    model.dbId = apiModel.model_id;
+    model.status = apiModel.status;
+    model.setLoadState('loading');
+
+    if (apiModel.images && apiModel.images.length > 0) {
+      model.setImages(apiModel.images.map((img) => img.image_url));
+    }
+
+    if (apiModel.comments && apiModel.comments.length > 0) {
+      model.setModelComment(apiModel.comments[0].comment);
+    }
+
+    this._models.set(model.id, model);
+    return model;
   }
 
   /* ===============================
@@ -138,6 +179,127 @@ export class MeshesManager {
     }
   }
 
+  private async loadModelLandmarks(
+    model: MeshManager,
+    apiModel: ApiModelDetail,
+  ) {
+    if (!apiModel.landmarks_url) {
+      return;
+    }
+
+    try {
+      const normalizeLandmarkData = async (url: string) => {
+        const response = await fetch(`${url}?t=${Date.now()}`);
+        if (!response.ok) {
+          return null;
+        }
+
+        const data = await response.json();
+        let landmarkData = data;
+        if (!data.mesh_landmarks && Object.keys(data).length > 0) {
+          const firstKey = Object.keys(data)[0];
+          if (data[firstKey] && data[firstKey].mesh_landmarks) {
+            landmarkData = data[firstKey];
+          }
+        }
+        return landmarkData;
+      };
+
+      const currentLandmarkData = await normalizeLandmarkData(apiModel.landmarks_url);
+      const originalLandmarkData = apiModel.original_landmarks_url
+        ? await normalizeLandmarkData(apiModel.original_landmarks_url)
+        : currentLandmarkData;
+
+      if (currentLandmarkData) {
+        model.processLandmarkResponse(
+          currentLandmarkData,
+          apiModel.status,
+          [originalLandmarkData ?? currentLandmarkData],
+        );
+        this._libState.viewManager.addLog(`Loaded landmarks for ${model.fileName}`, 'success');
+      }
+    } catch (error) {
+      console.warn(
+        `Could not fetch S3 landmark JSON for ${model.fileName} at ${apiModel.landmarks_url}`,
+      );
+      this._libState.viewManager.addLog(
+        `Failed to fetch S3 landmarks for ${model.fileName}`,
+        'warning',
+      );
+    }
+  }
+
+  private async hydrateApiModel(model: MeshManager, apiModel: ApiModelDetail) {
+    try {
+      const scene = await Utils3D.loadGLTF(apiModel.model_glb_url);
+
+      scene.traverse((obj) => {
+        if (obj instanceof THREE.Mesh) {
+          obj.material = obj.material.clone();
+        }
+      });
+
+      model.scene.clear();
+      model.scene.copy(scene, true);
+      model.scene.name = scene.name || model.scene.name;
+      model.setLoadState('ready');
+
+      if (!this.selectedModelId) {
+        this.setSelectedModelId(model.id);
+      } else if (this.selectedModelId === model.id) {
+        this._libState.cameraManager.focusCameraTo([model.scene]);
+      }
+
+      void this.loadModelLandmarks(model, apiModel);
+    } catch (error) {
+      console.error('[MeshesManager] Failed to hydrate API model:', error);
+      model.setLoadError(
+        error instanceof Error ? error.message : 'Failed to load model',
+      );
+      this._libState.viewManager.addLog(
+        `Failed to load model ${model.fileName}`,
+        'error',
+      );
+    }
+  }
+
+  private async loadApiModelsBatch(
+    stagedModels: Array<{ model: MeshManager; apiModel: ApiModelDetail }>,
+    concurrency: number,
+  ) {
+    const queue = [...stagedModels];
+    const workerCount = Math.min(concurrency, queue.length);
+
+    const workers = Array.from({ length: workerCount }, async () => {
+      while (queue.length > 0) {
+        const next = queue.shift();
+        if (!next) {
+          return;
+        }
+
+        await this.hydrateApiModel(next.model, next.apiModel);
+      }
+    });
+
+    await Promise.all(workers);
+  }
+
+  async loadApiModelsStaged(apiModels: ApiModelDetail[], initialBatchSize = 10) {
+    const stagedModels = apiModels.map((apiModel) => ({
+      apiModel,
+      model: this.createApiModelEntry(apiModel),
+    }));
+
+    const initialModels = stagedModels.slice(0, initialBatchSize);
+    const backgroundModels = stagedModels.slice(initialBatchSize);
+
+    await this.loadApiModelsBatch(initialModels, 3);
+
+    if (backgroundModels.length > 0) {
+      void this.loadApiModelsBatch(backgroundModels, 2);
+    }
+  }
+
   setLandmarkPositions(
     landmarkPositions: LandmarkType,
     targetMeshUuid?: string,
@@ -157,14 +319,22 @@ export class MeshesManager {
     }
   }
 
-  exportLandmarks() :Record<string, Record<string, any>>{
+  exportLandmarks(): {
+    current: Record<string, Record<string, any>>;
+    original: Record<string, Record<string, any>>;
+    fileName: string;
+  } {
     const selected = this.selectedModel;
     if (!selected || selected.landmarks['Mesh landmarks'].length === 0) {
       this._libState.viewManager.addLog(
         'No landmark data for selected model to export.',
         'warning',
       );
-      return {};
+      return {
+        current: {},
+        original: {},
+        fileName: '',
+      };
     }
 
     if (!selected.allMeshLandmarksSaved) {
@@ -172,41 +342,31 @@ export class MeshesManager {
         'Save all mesh landmarks before exporting JSON.',
         'warning',
       );
-      return {};
+      return {
+        current: {},
+        original: {},
+        fileName: '',
+      };
     }
 
     const rawFileName = selected.fileName || 'model.glb';
+    const serialized = selected.getSerializedLandmarkPayload();
 
-    const meshLandmarks = selected.landmarks['Mesh landmarks'].reduce(
-      (acc, landmark) => {
-        acc[landmark.name] = {
-          x: landmark.position.x,
-          y: landmark.position.y,
-          z: landmark.position.z,
-        };
-        return acc;
+    return {
+      current: {
+        [rawFileName]: {
+          mesh_landmarks: serialized.mesh_landmarks,
+          mediapipe_landmarks: serialized.mediapipe_landmarks,
+        },
       },
-      {} as Record<string, any>,
-    );
-    const mediapipe_landmarks = selected.landmarks['MediaPipe landmarks'].reduce(
-      (acc, landmark) => {
-        acc[landmark.name] = {
-          x: landmark.position.x,
-          y: landmark.position.y,
-          z: landmark.position.z,
-        };
-        return acc;
+      original: {
+        [rawFileName]: {
+          mesh_landmarks: serialized.original_mesh_landmarks,
+          mediapipe_landmarks: serialized.original_mediapipe_landmarks,
+        },
       },
-      {} as Record<string, any>,
-    );
-
-    const exportData = {
-      [rawFileName]: {
-        mesh_landmarks: meshLandmarks,
-        mediapipe_landmarks: mediapipe_landmarks,
-      },
+      fileName: rawFileName,
     };
-    return exportData;
   }
 
   // async loadLandmarksFromCache(model: MeshManager) {
@@ -286,6 +446,7 @@ export class MeshesManager {
       );
       this._models.set(scene.uuid, model);
       this.loadImagesFromConfig(model);
+      model.setLoadState('ready');
 
       // Local static landmark fallback kept for reference.
       // if (loadStaticLandmarks) {
@@ -306,82 +467,13 @@ export class MeshesManager {
   };
 
   addApiModel = async (apiModel: ApiModelDetail) => {
-    try {
-      if (!apiModel.model_glb_url) {
-        throw new Error('GLB URL missing for API model');
-      }
-      
-      // 1. Load GLB
-      const scene = await Utils3D.loadGLTF(apiModel.model_glb_url);
-
-      // Clean scene hierarchy if needed
-      scene.traverse((obj) => {
-        if (obj instanceof THREE.Mesh) {
-          obj.material = obj.material.clone();
-        }
-      });
-
-      const fileName = apiModel.model_name || apiModel.model_glb_url.split('/').pop()?.split('\\').pop() || 'Model';
-
-      const model = new MeshManager(
-        scene.uuid,
-        scene,
-        apiModel.model_glb_url,
-        this._libState,
-        fileName,
-        apiModel.category,
-      );
-
-      // Populate DB fields
-      model.dbId = apiModel.model_id;
-      model.status = apiModel.status;
-
-      // Ensure Images from API are mapped
-      if (apiModel.images && apiModel.images.length > 0) {
-        model.setImages(apiModel.images.map((img) => img.image_url));
-      }
-
-      // Check for first comment
-      if (apiModel.comments && apiModel.comments.length > 0) {
-        model.setModelComment(apiModel.comments[0].comment);
-      }
-
-      this._models.set(scene.uuid, model);
-      // 2. Automatically load landmarks from backend if URL provided
-      if (apiModel.landmarks_url) {
-        try {
-          const response = await fetch(`${apiModel.landmarks_url}?t=${Date.now()}`);
-          if (response.ok) {
-            const data = await response.json();
-            
-            // Handle different JSON structures (top-level mesh_landmarks or wrapped in filename)
-            let landmarkData = data;
-            if (!data.mesh_landmarks && Object.keys(data).length > 0) {
-              const firstKey = Object.keys(data)[0];
-              if (data[firstKey] && data[firstKey].mesh_landmarks) {
-                landmarkData = data[firstKey];
-              }
-            }
-            model.processLandmarkResponse(landmarkData, apiModel.status, [landmarkData]);
-            this._libState.viewManager.addLog(`Loaded landmarks for ${fileName}`, 'success');
-          }
-        } catch (e) {
-          console.warn(`Could not fetch S3 landmark JSON for ${fileName} at ${apiModel.landmarks_url}`);
-          this._libState.viewManager.addLog(`Failed to fetch S3 landmarks for ${fileName}`, 'warning');
-        }
-      }
-
-      // 3. Auto-select first model if none selected
-      if (!this.selectedModelId) {
-        this.setSelectedModelId(scene.uuid);
-      } else if (this.selectedModelId === scene.uuid) {
-        this._libState.cameraManager.focusCameraTo([scene]);
-      }
-      return scene.uuid;
-    } catch (error) {
-      console.error('[MeshesManager] Failed to load API model:', error);
-      throw error;
+    if (!apiModel.model_glb_url) {
+      throw new Error('GLB URL missing for API model');
     }
+
+    const model = this.createApiModelEntry(apiModel);
+    await this.hydrateApiModel(model, apiModel);
+    return model.id;
   };
 
   // async loadAllStaticLandmarks() {

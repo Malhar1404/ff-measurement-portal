@@ -22,6 +22,7 @@ import { SyntheticEvent, useState } from 'react';
 import { useMainContext } from '../../hooks/useMainContext';
 import CommentsBox from './CommentBox';
 import { downloadFile } from '../../utils/generalUtils';
+import { updateLandmarkJson, updateModelStatus } from '../../services/modelService';
 
 type SidebarTab = 'landmarks' | 'images';
 
@@ -32,6 +33,7 @@ export const ModelDetailsSidebar = observer(() => {
   const meshLandmarks = selectedModel?.landmarks['Mesh landmarks'] || [];
   const modelImages = selectedModel?.images || [];
   const selectedLandmarkName = selectedModel?.selectedMeshLandmarkName ?? null;
+  const [isSaving, setIsSaving] = useState(false);
 
 
   const [activeTab, setActiveTab] = useState<SidebarTab>('landmarks');
@@ -66,7 +68,7 @@ export const ModelDetailsSidebar = observer(() => {
     }
   };
 
-  const handleSaveLandmarks = () => {
+  const handleSaveLandmarks = async () => {
     if (!selectedModel) {
       return;
     }
@@ -79,8 +81,53 @@ export const ModelDetailsSidebar = observer(() => {
     }
 
     const exportData = meshesManager.exportLandmarks();
-    const fileName = Object.keys(exportData)[0];
-    downloadFile(exportData, fileName);
+    const fileName = exportData.fileName;
+    if (!fileName) {
+      enqueueSnackbar('Nothing to save for the selected model.', {
+        variant: 'error',
+      });
+      return;
+    }
+
+    if (!selectedModel.dbId) {
+      downloadFile(exportData.current, fileName);
+      enqueueSnackbar(
+        'This model is not linked to the backend, so the JSON was downloaded locally instead.',
+        {
+          variant: 'warning',
+        },
+      );
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      await updateLandmarkJson({
+        model_id: selectedModel.dbId,
+        json_data: exportData.current,
+        original_json_data: exportData.original,
+      });
+
+      await updateModelStatus({
+        model_id: selectedModel.dbId,
+        status: 'approved',
+      });
+
+      selectedModel.setStatus('approved');
+      enqueueSnackbar('Landmarks saved to the backend.', {
+        variant: 'success',
+      });
+    } catch (error) {
+      console.error('Failed to save landmarks to backend:', error);
+      enqueueSnackbar(
+        error instanceof Error ? error.message : 'Failed to save landmarks to backend.',
+        {
+          variant: 'error',
+        },
+      );
+    } finally {
+      setIsSaving(false);
+    }
   };
 
 
@@ -379,7 +426,7 @@ export const ModelDetailsSidebar = observer(() => {
               color="primary"
               startIcon={<SaveAlt />}
               onClick={handleSaveLandmarks}
-              disabled={!selectedModel?.hasLandmarks}
+              disabled={!selectedModel?.hasLandmarks || isSaving}
               sx={{
                 borderRadius: 2,
                 fontSize: '0.7rem',
@@ -388,7 +435,7 @@ export const ModelDetailsSidebar = observer(() => {
                 fontWeight: 500,
               }}
             >
-              Save Draft
+              {isSaving ? 'Saving...' : 'Save Draft'}
             </Button>
           </Box>
         </>

@@ -1,14 +1,10 @@
 import {
   CheckCircle,
   Description,
-  HistoryEdu,
-  Image,
-  SaveAlt,
-  Upload
+  HourglassEmpty,
 } from '@mui/icons-material';
 import {
   Box,
-  Button,
   Divider,
   List,
   ListItem,
@@ -16,7 +12,6 @@ import {
   ListItemIcon,
   ListItemText,
   Paper,
-  Stack,
   Tab,
   Tabs,
   Typography,
@@ -28,6 +23,11 @@ import { useMainContext } from '../../hooks/useMainContext';
 
 export const Sidebar = observer(() => {
   const { meshesManager, viewManager } = useMainContext();
+  const visibleModels = meshesManager.modelsList.filter(
+    (model) => model.category === viewManager.activeCategoryTab,
+  );
+  const readyCount = visibleModels.filter((model) => model.isReady).length;
+  const totalCount = visibleModels.length;
 
   return (
     <Paper
@@ -44,9 +44,27 @@ export const Sidebar = observer(() => {
         width: 260,
         zIndex: 1100,
       }}>
-      <Box sx={{ p: 2 }}>
+      <Box
+        sx={{
+          alignItems: 'center',
+          display: 'flex',
+          justifyContent: 'space-between',
+          gap: 1,
+          p: 2,
+        }}
+      >
         <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 0 }}>
           Model Assets
+        </Typography>
+        <Typography
+          variant="caption"
+          sx={{
+            color: 'text.secondary',
+            letterSpacing: 0.2,
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {readyCount} / {totalCount} ready
         </Typography>
       </Box>
 
@@ -69,8 +87,7 @@ export const Sidebar = observer(() => {
 
       <Box sx={{ flexGrow: 1, overflowY: 'auto', py: 1 }}>
         <List>
-          {meshesManager.modelsList
-            .filter(m => m.category === viewManager.activeCategoryTab)
+          {visibleModels
             .map((model) => (
               <ListItem
                 key={model.id}
@@ -84,23 +101,34 @@ export const Sidebar = observer(() => {
                       minWidth: 32,
                       mr: 1.5,
                     }}>
-                    <CheckCircle
-                      fontSize="small"
-                      sx={{
-                        color:  model.isApproved
-                          ? 'success.main'
-                          :  model.isPending
-                            ? 'warning.main'
-                            : 'rgba(148, 163, 184, 0.45)',
-                      }}
-                    />
+                    {model.isLoading ? (
+                      <HourglassEmpty
+                        fontSize="small"
+                        sx={{ color: 'rgba(148, 163, 184, 0.55)' }}
+                      />
+                    ) : (
+                      <CheckCircle
+                        fontSize="small"
+                        sx={{
+                          color: model.isApproved
+                            ? 'success.main'
+                            : model.isPending
+                              ? 'warning.main'
+                              : 'rgba(148, 163, 184, 0.45)',
+                        }}
+                      />
+                    )}
                   </Box>
                 }
                >
                 <ListItemButton
                   selected={meshesManager.selectedModelId === model.id}
+                  disabled={!model.isReady}
                   onClick={() => meshesManager.setSelectedModelId(model.id)}
                   sx={{
+                    opacity: model.isReady ? 1 : 0.55,
+                    cursor: model.isReady ? 'pointer' : 'not-allowed',
+                    bgcolor: model.isReady ? 'inherit' : 'rgba(148, 163, 184, 0.08)',
                     '&.Mui-selected': {
                       bgcolor: 'primary.light',
                       color: 'primary.contrastText',
@@ -117,7 +145,15 @@ export const Sidebar = observer(() => {
                   </ListItemIcon>
                   <ListItemText
                     primary={model.fileName || 'Untitled Model'}
-                    secondary={model.hasLandmarks ? 'Landmarks Detected' : 'No Data'}
+                    secondary={
+                      model.isLoading
+                        ? 'Preparing model...'
+                        : model.loadState === 'failed'
+                          ? model.loadError || 'Failed to load'
+                          : model.hasLandmarks
+                            ? 'Landmarks Detected'
+                            : 'No Data'
+                    }
                     primaryTypographyProps={{
                       style: {
                         overflow: 'hidden',
@@ -127,7 +163,13 @@ export const Sidebar = observer(() => {
                     }}
                     secondaryTypographyProps={{
                         sx: { 
-                            color: model.hasLandmarks ? 'success.main' : 'text.secondary',
+                            color: model.isLoading
+                              ? 'text.secondary'
+                              : model.loadState === 'failed'
+                                ? 'error.main'
+                                : model.hasLandmarks
+                                  ? 'success.main'
+                                  : 'text.secondary',
                             fontSize: '0.75rem'
                         }
                     }}
@@ -136,7 +178,7 @@ export const Sidebar = observer(() => {
               </ListItem>
             ))}
           
-          {meshesManager.modelsList.filter(m => m.category === viewManager.activeCategoryTab).length === 0 && (
+          {visibleModels.length === 0 && (
             <Box sx={{ p: 4, textAlign: 'center' }}>
               <Typography variant="body2" color="text.secondary">
                 No {viewManager.activeCategoryTab} models loaded

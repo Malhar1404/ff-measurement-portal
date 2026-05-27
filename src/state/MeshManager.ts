@@ -11,6 +11,8 @@ import { SkirtInstance } from './SkirtInstance';
 import { StateManager } from './StateManager';
 import { ModelStatus } from '../types/api';
 
+export type ModelLoadState = 'loading' | 'ready' | 'failed';
+
 export interface SerializedSlicePoint {
   x: number;
   y: number;
@@ -48,6 +50,8 @@ export class MeshManager {
   images: string[] = [];
   dbId: string | null = null;
   status: ModelStatus = 'not_checked';
+  loadState: ModelLoadState = 'loading';
+  loadError: string | null = null;
 
 
   // Data isolation
@@ -107,6 +111,26 @@ export class MeshManager {
   }
   setStatus(status: ModelStatus) {
     this.status = status;
+  }
+
+  setLoadState(loadState: ModelLoadState) {
+    this.loadState = loadState;
+    if (loadState !== 'failed') {
+      this.loadError = null;
+    }
+  }
+
+  setLoadError(message: string) {
+    this.loadState = 'failed';
+    this.loadError = message;
+  }
+
+  get isReady() {
+    return this.loadState === 'ready';
+  }
+
+  get isLoading() {
+    return this.loadState === 'loading';
   }
 
   private resolveLandmarkPoint(data: any, landmarkName: string) {
@@ -331,7 +355,18 @@ export class MeshManager {
       const poseLandmarkObjects = poseVectors.map((p, i) => ({
         color: 'orange',
         name: p.name,
-        originalPosition: correctedPose[i].clone(),
+        originalPosition: (() => {
+          const originalPoint = this.getOriginalLandmarkPoint(
+            ogLandmarks,
+            p.name,
+            p.vector,
+          );
+          return new THREE.Vector3(
+            originalPoint.x,
+            originalPoint.y,
+            originalPoint.z,
+          );
+        })(),
         originalSliceData: null,
         position: correctedPose[i],
         sliceData: null,
@@ -385,6 +420,33 @@ export class MeshManager {
     return this.landmarks['Mesh landmarks'].filter(
       (landmark) => landmark.color === 'green',
     ).length;
+  }
+
+  private serializeLandmarkGroup(
+    landmarks: SingleLandmark[],
+    useOriginal = false,
+  ) {
+    return landmarks.reduce((acc, landmark) => {
+      const point = useOriginal && landmark.originalPosition
+        ? landmark.originalPosition
+        : landmark.position;
+
+      acc[landmark.name] = {
+        x: point.x,
+        y: point.y,
+        z: point.z,
+      };
+      return acc;
+    }, {} as Record<string, any>);
+  }
+
+  getSerializedLandmarkPayload() {
+    return {
+      mesh_landmarks: this.serializeLandmarkGroup(this.landmarks['Mesh landmarks']),
+      mediapipe_landmarks: this.serializeLandmarkGroup(this.landmarks['MediaPipe landmarks']),
+      original_mesh_landmarks: this.serializeLandmarkGroup(this.landmarks['Mesh landmarks'], true),
+      original_mediapipe_landmarks: this.serializeLandmarkGroup(this.landmarks['MediaPipe landmarks'], true),
+    };
   }
 
   serializeLandmarkSlice(sliceData?: MeshSliceResult | null): SerializedLandmarkSlice | undefined {
