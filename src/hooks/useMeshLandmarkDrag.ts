@@ -21,7 +21,6 @@ export const useMeshLandmarkDrag = ({
 
   const draggedLandmarkNameRef = useRef<string | null>(null);
   const suppressClickRef = useRef(false);
-  const cameraEnabledRef = useRef(true);
   const hasDraggedRef = useRef(false);
   const dragPlaneRef = useRef(new THREE.Plane());
   const dragPointRef = useRef(new THREE.Vector3());
@@ -42,6 +41,35 @@ export const useMeshLandmarkDrag = ({
   };
 
   useEffect(() => {
+    const startEditingLandmark = (landmarkName: string) => {
+      const selectedModel = meshesManager.selectedModel;
+
+      if (!selectedModel) {
+        return;
+      }
+
+      const activeLandmark = selectedModel.landmarks["Mesh landmarks"].find(
+        (item) => item.name === landmarkName,
+      );
+
+      if (!activeLandmark) {
+        return;
+      }
+
+      draggedLandmarkNameRef.current = landmarkName;
+      suppressClickRef.current = false;
+      hasDraggedRef.current = false;
+
+      const dragAnchor = activeLandmark.position.clone();
+      const normal = camera.position.clone().sub(dragAnchor).normalize();
+      dragPlaneRef.current.setFromNormalAndCoplanarPoint(normal, dragAnchor);
+
+      selectedModel.updateMeshLandmarkSlicePreview(
+        landmarkName,
+        computeSliceForLandmark(landmarkName),
+      );
+    };
+
     const getPointerOnDragPlane = (
       event: PointerEvent,
     ): THREE.Vector3 | null => {
@@ -93,6 +121,13 @@ export const useMeshLandmarkDrag = ({
         return;
       }
 
+      const activeCameras = cameraManager.cameraRefs;
+      if (activeCameras.length > 0) {
+        activeCameras.forEach((camera) => {
+          camera.enabled = false;
+        });
+      }
+
       selectedModel.updateMeshLandmarkPosition(
         landmarkName,
         projectPointToMesh(
@@ -114,7 +149,7 @@ export const useMeshLandmarkDrag = ({
 
     const restoreCameraControls = () => {
       cameraManager.cameraRefs.forEach((camera) => {
-        camera.enabled = cameraEnabledRef.current;
+        camera.enabled = true;
       });
     };
 
@@ -129,8 +164,8 @@ export const useMeshLandmarkDrag = ({
       if (selectedModel) {
         const slice = computeSliceForLandmark(landmarkName);
         selectedModel.commitMeshLandmarkSlice(landmarkName, slice);
-        // Also update positionSliceData so the contour stays at the dropped position
         selectedModel.updateMeshLandmarkPositionSlice(landmarkName, slice);
+        selectedModel.markMeshLandmarkSaved(landmarkName);
       }
 
       draggedLandmarkNameRef.current = null;
@@ -140,12 +175,21 @@ export const useMeshLandmarkDrag = ({
       restoreCameraControls();
     };
 
+    const handleStartEditing = (event: Event) => {
+      const detail = (event as CustomEvent<{ landmarkName?: string }>).detail;
+      if (detail?.landmarkName) {
+        startEditingLandmark(detail.landmarkName);
+      }
+    };
+
     window.addEventListener("pointermove", handlePointerMove);
     window.addEventListener("pointerup", handlePointerUp);
+    window.addEventListener("ff-start-landmark-edit", handleStartEditing);
 
     return () => {
       window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("pointerup", handlePointerUp);
+      window.removeEventListener("ff-start-landmark-edit", handleStartEditing);
     };
   }, [camera, cameraManager, gl, meshesManager, raycaster]);
 
@@ -188,7 +232,6 @@ export const useMeshLandmarkDrag = ({
 
     const activeCameras = cameraManager.cameraRefs;
     if (activeCameras.length > 0) {
-      cameraEnabledRef.current = activeCameras[0].enabled ?? true;
       activeCameras.forEach((camera) => {
         camera.enabled = false;
       });

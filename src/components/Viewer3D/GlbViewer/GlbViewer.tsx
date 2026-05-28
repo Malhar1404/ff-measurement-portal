@@ -29,8 +29,8 @@ export const LANDMARK_THEME: Record<
   }
 > = {
   mid_waist_landmark: {
-    base: "#0e7490",
-    accent: "#0891b2",
+    base: "#22d3ee",
+    accent: "#22d3ee",
     groove: "#a5f3fc",
     contour: "#22d3ee",
     selectedBase: "#06b6d4",
@@ -39,8 +39,8 @@ export const LANDMARK_THEME: Record<
     label: "Mid Waist",
   },
   narrow_waist_landmark: {
-    base: "#92400e",
-    accent: "#b45309",
+    base: "#fcd34d",
+    accent: "#fcd34d",
     groove: "#fde68a",
     contour: "#fbbf24",
     selectedBase: "#f59e0b",
@@ -49,8 +49,8 @@ export const LANDMARK_THEME: Record<
     label: "Narrow Waist",
   },
   allstar_skirt_end_landmark: {
-    base: "#6b21a8",
-    accent: "#7e22ce",
+    base: "#c084fc",
+    accent: "#c084fc",
     groove: "#e9d5ff",
     contour: "#c084fc",
     selectedBase: "#a855f7",
@@ -59,8 +59,8 @@ export const LANDMARK_THEME: Record<
     label: "Allstar End",
   },
   school_skirt_end_landmark: {
-    base: "#14532d",
-    accent: "#166534",
+    base: "#4ade80",
+    accent: "#4ade80",
     groove: "#bbf7d0",
     contour: "#4ade80",
     selectedBase: "#22c55e",
@@ -163,6 +163,7 @@ export const GlbViewer = observer(
               }
               interactive={!showOriginalLandmarks}
               point={point}
+              showOriginalLandmarks={showOriginalLandmarks}
             />
           ))}
       </group>
@@ -181,6 +182,7 @@ const LandmarkPoint = observer(
     isSelected,
     interactive,
     point,
+    showOriginalLandmarks,
   }: {
     defaultMeshPointColor: string;
     handleLandmarkClick: (event: any, landmarkName: string) => void;
@@ -190,6 +192,7 @@ const LandmarkPoint = observer(
     bbCenterZ: number;
     isSelected: boolean;
     interactive: boolean;
+    showOriginalLandmarks: boolean;
     point: {
       color?: string;
       name: string;
@@ -287,7 +290,7 @@ const LandmarkPoint = observer(
 
     return (
       <group>
-        {originalContourLinePoints.length > 1 && (
+        {showOriginalLandmarks && originalContourLinePoints.length > 1 && (
           <Line
             points={originalContourLinePoints}
             color="#8b949e"
@@ -376,33 +379,6 @@ const LandmarkPoint = observer(
             depthTest={false}
           />
         </mesh>
-
-        {shouldShowMeasurementControl && (
-          <mesh
-            position={[handlePosition.x, handlePosition.y, handlePosition.z]}
-            renderOrder={999}
-            onPointerDown={
-              interactive
-                ? (e: any) => handleLandmarkPointerDown(e, point.name)
-                : undefined
-            }
-            onClick={
-              interactive
-                ? (e: any) => handleLandmarkClick(e, point.name)
-                : undefined
-            }
-          >
-            <sphereGeometry args={[1.5, 32, 32]} />
-            <meshStandardMaterial
-              color={controlColor}
-              emissive={controlAccentColor}
-              emissiveIntensity={0.35}
-              transparent
-              opacity={0.98}
-              depthTest={false}
-            />
-          </mesh>
-        )}
       </group>
     );
   },
