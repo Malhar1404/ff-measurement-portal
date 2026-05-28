@@ -337,18 +337,6 @@ export class MeshesManager {
       };
     }
 
-    if (!selected.allMeshLandmarksSaved) {
-      this._libState.viewManager.addLog(
-        'Save all mesh landmarks before exporting JSON.',
-        'warning',
-      );
-      return {
-        current: {},
-        original: {},
-        fileName: '',
-      };
-    }
-
     const rawFileName = selected.fileName || 'model.glb';
     const serialized = selected.getSerializedLandmarkPayload();
 

@@ -1,11 +1,10 @@
+import { useEffect, useRef } from "react";
+import * as THREE from "three";
 
-import { useEffect, useRef } from 'react';
-import * as THREE from 'three';
-
-import { useMainContext } from './useMainContext';
-import { ThreeEvent } from '@react-three/fiber/dist/declarations/src/core/events';
-import { SkirtGeometryUtils } from '../utils/SkirtGeometryUtils';
-import { Utils3D } from '../utils/Utils3D';
+import { useMainContext } from "./useMainContext";
+import { ThreeEvent } from "@react-three/fiber/dist/declarations/src/core/events";
+import { SkirtGeometryUtils } from "../utils/SkirtGeometryUtils";
+import { Utils3D } from "../utils/Utils3D";
 
 type UseMeshLandmarkDragParams = {
   camera: THREE.Camera;
@@ -30,7 +29,7 @@ export const useMeshLandmarkDrag = ({
   const computeSliceForLandmark = (landmarkName: string) => {
     const selectedModel = meshesManager.selectedModel;
     const mesh = selectedModel?.getPrimaryMesh();
-    const landmark = selectedModel?.landmarks['Mesh landmarks'].find(
+    const landmark = selectedModel?.landmarks["Mesh landmarks"].find(
       (item) => item.name === landmarkName,
     );
 
@@ -43,7 +42,9 @@ export const useMeshLandmarkDrag = ({
   };
 
   useEffect(() => {
-    const getPointerOnDragPlane = (event: PointerEvent): THREE.Vector3 | null => {
+    const getPointerOnDragPlane = (
+      event: PointerEvent,
+    ): THREE.Vector3 | null => {
       const rect = gl.domElement.getBoundingClientRect();
       const pointer = new THREE.Vector2(
         ((event.clientX - rect.left) / rect.width) * 2 - 1,
@@ -51,7 +52,10 @@ export const useMeshLandmarkDrag = ({
       );
 
       raycaster.setFromCamera(pointer, camera);
-      return raycaster.ray.intersectPlane(dragPlaneRef.current, dragPointRef.current)
+      return raycaster.ray.intersectPlane(
+        dragPlaneRef.current,
+        dragPointRef.current,
+      )
         ? dragPointRef.current.clone()
         : null;
     };
@@ -60,9 +64,10 @@ export const useMeshLandmarkDrag = ({
       selectedModel: NonNullable<typeof meshesManager.selectedModel>,
       targetPoint: THREE.Vector3,
     ) => {
-      const [projectedPoint] = Utils3D.checkRayCastOnZAxis(selectedModel.scene, [
-        targetPoint,
-      ]);
+      const [projectedPoint] = Utils3D.checkRayCastOnZAxis(
+        selectedModel.scene,
+        [targetPoint],
+      );
       return projectedPoint ?? targetPoint;
     };
 
@@ -80,7 +85,7 @@ export const useMeshLandmarkDrag = ({
         return;
       }
 
-      const activeLandmark = selectedModel.landmarks['Mesh landmarks'].find(
+      const activeLandmark = selectedModel.landmarks["Mesh landmarks"].find(
         (item) => item.name === landmarkName,
       );
 
@@ -93,10 +98,10 @@ export const useMeshLandmarkDrag = ({
         projectPointToMesh(
           selectedModel,
           new THREE.Vector3(
-          activeLandmark.position.x,
-          pointOnDragPlane.y,
-          activeLandmark.position.z,
-        ),
+            activeLandmark.position.x,
+            pointOnDragPlane.y,
+            activeLandmark.position.z,
+          ),
         ),
       );
       selectedModel.updateMeshLandmarkSlicePreview(
@@ -107,36 +112,40 @@ export const useMeshLandmarkDrag = ({
       suppressClickRef.current = true;
     };
 
-   const handlePointerUp = () => {
-  const landmarkName = draggedLandmarkNameRef.current;
+    const restoreCameraControls = () => {
+      cameraManager.cameraRefs.forEach((camera) => {
+        camera.enabled = cameraEnabledRef.current;
+      });
+    };
 
-  if (!landmarkName) {
-    return;
-  }
+    const handlePointerUp = () => {
+      const landmarkName = draggedLandmarkNameRef.current;
 
-  const selectedModel = meshesManager.selectedModel;
-  if (selectedModel) {
-    const slice = computeSliceForLandmark(landmarkName);
-    selectedModel.commitMeshLandmarkSlice(landmarkName, slice);
-    // Also update positionSliceData so the contour stays at the dropped position
-    selectedModel.updateMeshLandmarkPositionSlice(landmarkName, slice);
-  }
+      if (!landmarkName) {
+        return;
+      }
 
-  draggedLandmarkNameRef.current = null;
-  suppressClickRef.current = hasDraggedRef.current;
-  hasDraggedRef.current = false;
+      const selectedModel = meshesManager.selectedModel;
+      if (selectedModel) {
+        const slice = computeSliceForLandmark(landmarkName);
+        selectedModel.commitMeshLandmarkSlice(landmarkName, slice);
+        // Also update positionSliceData so the contour stays at the dropped position
+        selectedModel.updateMeshLandmarkPositionSlice(landmarkName, slice);
+      }
 
-  if (cameraManager.cameraRef) {
-    cameraManager.cameraRef.enabled = cameraEnabledRef.current;
-  }
-};
+      draggedLandmarkNameRef.current = null;
+      suppressClickRef.current = hasDraggedRef.current;
+      hasDraggedRef.current = false;
 
-    window.addEventListener('pointermove', handlePointerMove);
-    window.addEventListener('pointerup', handlePointerUp);
+      restoreCameraControls();
+    };
+
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", handlePointerUp);
 
     return () => {
-      window.removeEventListener('pointermove', handlePointerMove);
-      window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerUp);
     };
   }, [camera, cameraManager, gl, meshesManager, raycaster]);
 
@@ -156,7 +165,7 @@ export const useMeshLandmarkDrag = ({
       return;
     }
 
-    const activeLandmark = selectedModel.landmarks['Mesh landmarks'].find(
+    const activeLandmark = selectedModel.landmarks["Mesh landmarks"].find(
       (item) => item.name === landmarkName,
     );
 
@@ -177,9 +186,12 @@ export const useMeshLandmarkDrag = ({
       computeSliceForLandmark(landmarkName),
     );
 
-    if (cameraManager.cameraRef) {
-      cameraEnabledRef.current = cameraManager.cameraRef.enabled ?? true;
-      cameraManager.cameraRef.enabled = false;
+    const activeCameras = cameraManager.cameraRefs;
+    if (activeCameras.length > 0) {
+      cameraEnabledRef.current = activeCameras[0].enabled ?? true;
+      activeCameras.forEach((camera) => {
+        camera.enabled = false;
+      });
     }
   };
 

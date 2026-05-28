@@ -73,13 +73,6 @@ export const ModelDetailsSidebar = observer(() => {
       return;
     }
 
-    if (!selectedModel.allMeshLandmarksSaved) {
-      enqueueSnackbar('Save all points first before exporting landmarks.', {
-        variant: 'error',
-      });
-      return;
-    }
-
     const exportData = meshesManager.exportLandmarks();
     const fileName = exportData.fileName;
     if (!fileName) {

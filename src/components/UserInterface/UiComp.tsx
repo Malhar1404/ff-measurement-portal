@@ -1,21 +1,31 @@
-import { Close } from '@mui/icons-material';
-import { Backdrop, Box, CircularProgress, CssBaseline, IconButton, Stack, Typography } from '@mui/material';
-import { Theme } from '@mui/material/styles';
-import { observer } from 'mobx-react-lite';
-import { useEffect, useRef, useState } from 'react';
+import { Close } from "@mui/icons-material";
+import {
+  Backdrop,
+  Box,
+  CircularProgress,
+  CssBaseline,
+  IconButton,
+  Stack,
+  Typography,
+} from "@mui/material";
+import { Theme } from "@mui/material/styles";
+import { observer } from "mobx-react-lite";
+import { useEffect, useRef, useState } from "react";
 
-import { fetchAllModelDetails } from '../../services/modelService';
-import { useMainContext } from '../../hooks/useMainContext';
-import { FileUpload } from './FileUpload';
-import { ModelDetailsSidebar } from './ModelDetailsSidebar';
-import { Sidebar } from './Sidebar';
-import { Viewer3D } from '../Viewer3D/Viewer3D';
+import { fetchAllModelDetails } from "../../services/modelService";
+import { useMainContext } from "../../hooks/useMainContext";
+import { FileUpload } from "./FileUpload";
+import { ModelDetailsSidebar } from "./ModelDetailsSidebar";
+import { Sidebar } from "./Sidebar";
+import { Viewer3D } from "../Viewer3D/Viewer3D";
 
 export const UiComp = observer(() => {
   const { meshesManager, viewManager } = useMainContext();
   const [upload3DModalOpen, setUpload3DModalOpen] = useState(false);
   const [uploadImagesModalOpen, setUploadImagesModalOpen] = useState(false);
-  const [loadingMessage, setLoadingMessage] = useState('Initializing Virtual Fitting...');
+  const [loadingMessage, setLoadingMessage] = useState(
+    "Initializing Virtual Fitting...",
+  );
 
   const initialLoadDone = useRef(false);
 
@@ -28,13 +38,13 @@ export const UiComp = observer(() => {
       viewManager.setIsInitialLoading(true);
 
       try {
-        setLoadingMessage('Fetching models from backend...');
+        setLoadingMessage("Fetching models from backend...");
         const apiModels = await fetchAllModelDetails();
 
-        setLoadingMessage('Loading the first batch of models...');
+        setLoadingMessage("Loading the first batch of models...");
         await meshesManager.loadApiModelsStaged(apiModels, 10);
       } catch (error) {
-        console.error('Failed to fetch models from API', error);
+        console.error("Failed to fetch models from API", error);
       }
 
       viewManager.setIsInitialLoading(false);
@@ -44,48 +54,76 @@ export const UiComp = observer(() => {
   }, [meshesManager, viewManager]);
 
   return (
-    <Box sx={{ height: '100vh', width: '100vw', overflow: 'hidden' }}>
+    <Box sx={{ height: "100vh", width: "100vw", overflow: "hidden" }}>
       <CssBaseline />
 
       <Box
         sx={{
-          backgroundColor: '#f8f9fa',
-          display: 'flex',
-          flexDirection: 'column',
-          height: '100%',
-          position: 'relative',
-          overflow: 'hidden',
-          width: '100%',
+          backgroundColor: "#f8f9fa",
+          display: "flex",
+          flexDirection: "column",
+          height: "100%",
+          position: "relative",
+          overflow: "hidden",
+          width: "100%",
         }}
       >
         {viewManager.comparisonImage ? (
-          <Box sx={{ display: 'flex', flex: 1, width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
-            <Box sx={{ flex: 1, position: 'relative', borderRight: '1px solid #333', height: '100%', overflow: 'hidden' }}>
+          <Box
+            sx={{
+              display: "flex",
+              flex: 1,
+              width: "100%",
+              height: "100%",
+              position: "relative",
+              overflow: "hidden",
+            }}
+          >
+            <Box
+              sx={{
+                flex: 1,
+                position: "relative",
+                borderRight: "1px solid #333",
+                height: "100%",
+                overflow: "hidden",
+              }}
+            >
               <Viewer3D />
             </Box>
 
-            <Box sx={{ flex: 1, backgroundColor: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', height: '100%', overflow: 'hidden' }}>
+            <Box
+              sx={{
+                flex: 1,
+                backgroundColor: "#000",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                position: "relative",
+                height: "100%",
+                overflow: "hidden",
+              }}
+            >
               <img
                 src={viewManager.comparisonImage}
                 alt="Comparison"
                 style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'contain',
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "contain",
                 }}
               />
 
               <Box
                 sx={{
-                  position: 'absolute',
+                  position: "absolute",
                   right: 16,
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  display: 'flex',
-                  flexDirection: 'column',
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  display: "flex",
+                  flexDirection: "column",
                   gap: 2,
                   zIndex: 10,
-                  backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                  backgroundColor: "rgba(0, 0, 0, 0.5)",
                   padding: 1,
                   borderRadius: 2,
                 }}
@@ -98,23 +136,31 @@ export const UiComp = observer(() => {
                       width: 64,
                       height: 80,
                       borderRadius: 1,
-                      overflow: 'hidden',
-                      cursor: 'pointer',
-                      border: viewManager.comparisonImage === imgUrl ? '2px solid #6df0ff' : '2px solid transparent',
+                      overflow: "hidden",
+                      cursor: "pointer",
+                      border:
+                        viewManager.comparisonImage === imgUrl
+                          ? "2px solid #6df0ff"
+                          : "2px solid transparent",
                       opacity: viewManager.comparisonImage === imgUrl ? 1 : 0.6,
-                      transition: 'all 0.2s',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
-                      '&:hover': {
+                      transition: "all 0.2s",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.5)",
+                      "&:hover": {
                         opacity: 1,
-                        transform: 'scale(1.05)',
-                        border: '2px solid rgba(109, 240, 255, 0.7)',
+                        transform: "scale(1.05)",
+                        border: "2px solid rgba(109, 240, 255, 0.7)",
                       },
                     }}
                   >
                     <img
                       src={imgUrl}
                       alt={`Thumbnail ${index + 1}`}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                        display: "block",
+                      }}
                     />
                   </Box>
                 ))}
@@ -124,16 +170,16 @@ export const UiComp = observer(() => {
             <IconButton
               onClick={() => viewManager.setComparisonImage(null)}
               sx={{
-                position: 'fixed',
+                position: "fixed",
                 top: 16,
                 right: 16,
-                backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                color: '#333',
+                backgroundColor: "rgba(255, 255, 255, 0.9)",
+                color: "#333",
                 zIndex: 9999,
-                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                '&:hover': {
-                  backgroundColor: '#fff',
-                  transform: 'scale(1.05)',
+                boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                "&:hover": {
+                  backgroundColor: "#fff",
+                  transform: "scale(1.05)",
                 },
               }}
             >
@@ -144,15 +190,84 @@ export const UiComp = observer(() => {
           <>
             <Box
               sx={{
-                flex: 1,
-                m: 0,
-                overflow: 'hidden',
-                position: 'relative',
+                position: "absolute",
+                left: 840,
+                top: 16,
+                zIndex: 1200,
               }}
             >
-              <Viewer3D />
+              <Box
+                sx={{
+                  bgcolor: "rgba(15, 23, 42, 0.9)",
+                  border: "1px solid rgba(148, 163, 184, 0.35)",
+                  borderRadius: 999,
+                  color: "#fff",
+                  fontSize: "0.82rem",
+                  fontWeight: 600,
+                  px: 1.5,
+                  py: 0.75,
+                }}
+              >
+                AI Landmark
+              </Box>
+            </Box>
 
-              <Sidebar />
+            <Box
+              sx={{
+                position: "absolute",
+                right: 16,
+                top: 16,
+                zIndex: 1200,
+              }}
+            >
+              <Box
+                sx={{
+                  bgcolor: "rgba(15, 23, 42, 0.9)",
+                  border: "1px solid rgba(148, 163, 184, 0.35)",
+                  borderRadius: 999,
+                  color: "#fff",
+                  fontSize: "0.82rem",
+                  fontWeight: 600,
+                  px: 1.5,
+                  py: 0.75,
+                }}
+              >
+                Editing Window
+              </Box>
+            </Box>
+
+            <Box
+              sx={{
+                flex: 1,
+                m: 0,
+                overflow: "hidden",
+                position: "relative",
+                display: "flex",
+              }}
+            >
+              <Box
+                sx={{
+                  flex: 1,
+                  position: "relative",
+                  borderRight: "1px solid #333",
+                  height: "100%",
+                  overflow: "hidden",
+                }}
+              >
+                <Viewer3D key="viewer-left" showOriginalLandmarks />
+                <Sidebar />
+              </Box>
+
+              <Box
+                sx={{
+                  flex: 1,
+                  position: "relative",
+                  height: "100%",
+                  overflow: "hidden",
+                }}
+              >
+                <Viewer3D key="viewer-right" />
+              </Box>
             </Box>
 
             <ModelDetailsSidebar />
@@ -176,18 +291,18 @@ export const UiComp = observer(() => {
 
       <Backdrop
         sx={{
-          color: '#fff',
+          color: "#fff",
           zIndex: (theme: Theme) => theme.zIndex.drawer + 2000,
-          backgroundColor: 'rgba(0, 0, 0, 0.85)',
-          display: 'flex',
-          flexDirection: 'column',
+          backgroundColor: "rgba(0, 0, 0, 0.85)",
+          display: "flex",
+          flexDirection: "column",
           gap: 2,
         }}
         open={viewManager.isInitialLoading}
       >
         <CircularProgress color="inherit" size={60} thickness={4} />
         <Stack spacing={0.5} alignItems="center">
-          <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+          <Typography variant="h6" sx={{ fontWeight: "bold" }}>
             Initializing Virtual Fitting
           </Typography>
           <Typography variant="body2" sx={{ opacity: 0.8 }}>

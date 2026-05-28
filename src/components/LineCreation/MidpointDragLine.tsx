@@ -1,10 +1,10 @@
-import { Html, Line, Sphere } from '@react-three/drei';
-import { useThree } from '@react-three/fiber';
-import { observer } from 'mobx-react-lite';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import * as THREE from 'three';
+import { Html, Line, Sphere } from "@react-three/drei";
+import { ThreeEvent, useThree } from "@react-three/fiber";
+import { observer } from "mobx-react-lite";
+import { useEffect, useMemo, useRef, useState } from "react";
+import * as THREE from "three";
 
-import { useMainContext } from '../../hooks/useMainContext';
+import { useMainContext } from "../../hooks/useMainContext";
 
 export type MidpointData = {
   position: { x: number; y: number; z: number };
@@ -21,7 +21,7 @@ type MidpointDragLineProps = {
   yMovementLimit?: number; // Relative limit (e.g. +/- 7)
   minY?: number; // 🔥 NEW: Absolute minimum Y limit
   maxY?: number; // 🔥 NEW: Absolute maximum Y limit
-  type?: 'waist' | 'bottom' | 'measurement'; // 🔥 NEW: Add 'measurement' type
+  type?: "waist" | "bottom" | "measurement"; // 🔥 NEW: Add 'measurement' type
   isDraggable?: boolean;
   showInches?: boolean; // 🔥 NEW: Option to show inches
   lockedIndices?: number[]; // indices that cannot be dragged
@@ -30,20 +30,21 @@ type MidpointDragLineProps = {
 export const MidpointDragLine = observer(
   ({
     midPoints,
-    lineColor = 'red',
-    sphereColor = 'yellow',
+    lineColor = "red",
+    sphereColor = "yellow",
     sphereSize = 1,
     onUpdate,
     onDragEnd,
     yMovementLimit = 7,
     minY,
     maxY,
-    type = 'bottom',
+    type = "bottom",
     isDraggable = true,
     showInches = false, // 🔥 NEW: Default to cm
     lockedIndices = [],
   }: MidpointDragLineProps) => {
-    const { adjustableSkirtManager, cameraManager, viewManager } = useMainContext();
+    const { adjustableSkirtManager, cameraManager, viewManager } =
+      useMainContext();
     const { camera, raycaster, mouse } = useThree();
 
     const sphere0Ref = useRef<THREE.Mesh>(null);
@@ -79,7 +80,7 @@ export const MidpointDragLine = observer(
 
     // 🔥 NEW: Convert cm to inches (1 cm = 0.393701 inches)
     const displayLength = showInches ? lineLength * 0.393701 : lineLength;
-    const unit = showInches ? 'in' : 'cm';
+    const unit = showInches ? "in" : "cm";
 
     /* ---------------------------------- */
     /* Line midpoint (for HTML label) */
@@ -118,7 +119,7 @@ export const MidpointDragLine = observer(
       ),
     ];
 
-    const handlePointerDown = (e: THREE.Event, index: 0 | 1) => {
+    const handlePointerDown = (e: ThreeEvent<PointerEvent>, index: 0 | 1) => {
       if (!isDraggable) {
         return;
       }
@@ -127,21 +128,23 @@ export const MidpointDragLine = observer(
         return;
       }
 
-     
       e.stopPropagation();
       setIsDragging(true);
       setDraggedIndex(index);
       initialYRef.current = midPoints[index].position.y;
 
-      if (cameraManager.cameraRef) {
-        cameraEnabledRef.current = cameraManager.cameraRef.enabled ?? true;
-        cameraManager.cameraRef.enabled = false;
+      const activeCameras = cameraManager.cameraRefs;
+      if (activeCameras.length > 0) {
+        cameraEnabledRef.current = activeCameras[0].enabled ?? true;
+        activeCameras.forEach((camera) => {
+          camera.enabled = false;
+        });
       }
 
       const startPos = index === 0 ? p1.clone() : p2.clone();
       const normal = camera.position.clone().sub(startPos).normalize();
       dragPlaneRef.current.setFromNormalAndCoplanarPoint(normal, startPos);
-  };
+    };
 
     const handlePointerMove = (event: PointerEvent) => {
       if (!isDragging || draggedIndex === null) return;
@@ -153,7 +156,7 @@ export const MidpointDragLine = observer(
       raycaster.ray.intersectPlane(dragPlaneRef.current, dragPointRef.current);
 
       const newY = dragPointRef.current.y;
-      
+
       // Calculate effective limits
       // 🔥 FIX: Remove relative limit (was +/- 7) to allow full range dragging
       let effectiveMinY = -Infinity;
@@ -164,19 +167,19 @@ export const MidpointDragLine = observer(
       if (maxY !== undefined) effectiveMaxY = maxY;
 
       // Clamp
-      const clampedY = THREE.MathUtils.clamp(newY, effectiveMinY, effectiveMaxY);
-
+      const clampedY = THREE.MathUtils.clamp(
+        newY,
+        effectiveMinY,
+        effectiveMaxY,
+      );
 
       const updated = [...midPoints];
       updated[draggedIndex].position.y = clampedY;
       updated[draggedIndex].secondPointPos.y = clampedY;
 
-     
-
-      if (type === 'bottom') {
-       
+      if (type === "bottom") {
         adjustableSkirtManager.updateBottomPoints(updated);
-      } 
+      }
       if (onUpdate) {
         onUpdate(updated);
       }
@@ -184,7 +187,7 @@ export const MidpointDragLine = observer(
 
     const handlePointerUp = () => {
       if (!isDragging) return;
-      
+
       if (onDragEnd) {
         onDragEnd(midPoints);
       }
@@ -192,30 +195,30 @@ export const MidpointDragLine = observer(
       setIsDragging(false);
       setDraggedIndex(null);
 
-      if (cameraManager.cameraRef) {
-        cameraManager.cameraRef.enabled = cameraEnabledRef.current;
-      }
+      cameraManager.cameraRefs.forEach((camera) => {
+        camera.enabled = cameraEnabledRef.current;
+      });
     };
 
     useEffect(() => {
-      window.addEventListener('pointermove', handlePointerMove);
-      window.addEventListener('pointerup', handlePointerUp);
+      window.addEventListener("pointermove", handlePointerMove);
+      window.addEventListener("pointerup", handlePointerUp);
 
       return () => {
-        window.removeEventListener('pointermove', handlePointerMove);
-        window.removeEventListener('pointerup', handlePointerUp);
+        window.removeEventListener("pointermove", handlePointerMove);
+        window.removeEventListener("pointerup", handlePointerUp);
       };
     }, [isDragging, draggedIndex, midPoints]);
 
     const getSphereColor = (index: 0 | 1) => {
-      if (lockedIndices.includes(index)) return 'gray';
-      return isDraggable ? sphereColor : 'gray';
+      if (lockedIndices.includes(index)) return "gray";
+      return isDraggable ? sphereColor : "gray";
     };
 
     const getSphereOpacity = (index: 0 | 1) => {
-        if (lockedIndices.includes(index)) return 0.5;
-        return isDraggable ? 1.0 : 0.5;
-    }
+      if (lockedIndices.includes(index)) return 0.5;
+      return isDraggable ? 1.0 : 0.5;
+    };
 
     return (
       <group>
@@ -230,23 +233,24 @@ export const MidpointDragLine = observer(
 
         {/* Line length label with unit */}
         {!viewManager.isInitialLoading && (
-            <Html
-              position={[lineMidPoint.x, lineMidPoint.y, lineMidPoint.z]}
-              center
-              distanceFactor={60}
-              style={{
-                background: 'rgba(0,0,0,0.85)',
-                borderRadius: '6px',
-                color: '#fff',
-                fontFamily: 'monospace',
-                fontSize: '40px', // 🔥 Increased font size
-                fontWeight: 'bold', // 🔥 NEW: Bold text
-                padding: '8px 14px',
-                pointerEvents: 'none',
-                whiteSpace: 'nowrap',
-              }}>
-              {displayLength.toFixed(2)} {unit}
-            </Html>
+          <Html
+            position={[lineMidPoint.x, lineMidPoint.y, lineMidPoint.z]}
+            center
+            distanceFactor={60}
+            style={{
+              background: "rgba(0,0,0,0.85)",
+              borderRadius: "6px",
+              color: "#fff",
+              fontFamily: "monospace",
+              fontSize: "40px", // 🔥 Increased font size
+              fontWeight: "bold", // 🔥 NEW: Bold text
+              padding: "8px 14px",
+              pointerEvents: "none",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {displayLength.toFixed(2)} {unit}
+          </Html>
         )}
 
         {/* Draggable sphere 0 */}
@@ -255,7 +259,8 @@ export const MidpointDragLine = observer(
           renderOrder={999} // 🔥 Always on top
           args={[sphereSize, 32, 32]}
           position={[p1.x, p1.y, p1.z]}
-          onPointerDown={(e) => handlePointerDown(e, 0)}>
+          onPointerDown={(e) => handlePointerDown(e, 0)}
+        >
           <meshStandardMaterial
             color={getSphereColor(0)}
             transparent
@@ -271,7 +276,8 @@ export const MidpointDragLine = observer(
             midPoints[0].secondPointPos.x,
             midPoints[0].secondPointPos.y,
             midPoints[0].secondPointPos.z,
-          ]}>
+          ]}
+        >
           <meshStandardMaterial
             color={getSphereColor(0)}
             transparent
@@ -285,7 +291,8 @@ export const MidpointDragLine = observer(
           renderOrder={999} // 🔥 Always on top
           args={[sphereSize, 32, 32]}
           position={[p2.x, p2.y, p2.z]}
-          onPointerDown={(e) => handlePointerDown(e, 1)}>
+          onPointerDown={(e) => handlePointerDown(e, 1)}
+        >
           <meshStandardMaterial
             color={getSphereColor(1)}
             transparent
@@ -301,7 +308,8 @@ export const MidpointDragLine = observer(
             midPoints[1].secondPointPos.x,
             midPoints[1].secondPointPos.y,
             midPoints[1].secondPointPos.z,
-          ]}>
+          ]}
+        >
           <meshStandardMaterial
             color={getSphereColor(1)}
             transparent
@@ -333,4 +341,4 @@ export const MidpointDragLine = observer(
   },
 );
 
-MidpointDragLine.displayName = 'MidpointDragLine';
+MidpointDragLine.displayName = "MidpointDragLine";
