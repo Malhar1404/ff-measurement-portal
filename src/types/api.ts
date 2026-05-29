@@ -2,8 +2,8 @@
 // API Response Types  (matches backend API_DOCUMENTATION.md)
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type ModelStatus = 'not_checked' | 'approved' | 'pending';
-export type ModelCategory = 'adult' | 'kid';
+export type ModelStatus = "not_checked" | "approved" | "pending";
+export type ModelCategory = "adult" | "kid";
 
 export type ApiImage = {
   image_id: string;
@@ -64,12 +64,16 @@ export type UpdateJsonUrlResponse = {
 };
 
 export type AddCommentResponse = {
-  comment_id: string,
-  created_at: string,
-  model_id: string,
-  comment: string,
-}
+  comment_id: string;
+  created_at: string;
+  model_id: string;
+  comment: string;
+};
 export type AddCommentRequest = {
   model_id: string;
   comment: string;
+};
+export type ResetLandmarkResponse = {
+  success: boolean;
+  message?: string;
 };

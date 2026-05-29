@@ -1,19 +1,21 @@
-import apiClient from '../config/axiosConfig';
+import apiClient from "../config/axiosConfig";
 import {
   AddCommentRequest,
   AddCommentResponse,
   ApiModelDetail,
   FetchAllModelsResponse,
+  ResetLandmarkResponse,
   UpdateJsonUrlRequest,
   UpdateJsonUrlResponse,
   UpdateStatusRequest,
   UpdateStatusResponse,
-} from '../types/api';
+} from "../types/api";
 
 // Backend API wrappers. Keep the old static helpers commented out below for quick fallback.
 
 export async function fetchAllModelDetails(): Promise<ApiModelDetail[]> {
-  const response = await apiClient.get<FetchAllModelsResponse>('api/model-details');
+  const response =
+    await apiClient.get<FetchAllModelsResponse>("api/model-details");
   return response.data.model_details;
 }
 
@@ -21,7 +23,7 @@ export async function updateModelStatus(
   payload: UpdateStatusRequest,
 ): Promise<UpdateStatusResponse> {
   const response = await apiClient.put<UpdateStatusResponse>(
-    'api/update-status',
+    "api/update-status",
     payload,
   );
   return response.data;
@@ -38,14 +40,28 @@ export async function updateLandmarkJson(
   payload: UpdateJsonUrlRequest,
 ): Promise<UpdateJsonUrlResponse> {
   const response = await apiClient.put<UpdateJsonUrlResponse>(
-    'api/update-json-url',
+    "api/update-json-url",
     payload,
   );
   return response.data;
 }
 
-export async function addComment(payload: AddCommentRequest): Promise<AddCommentResponse> {
-  const response = await apiClient.post<AddCommentResponse>('api/add-comment', payload);
+export async function addComment(
+  payload: AddCommentRequest,
+): Promise<AddCommentResponse> {
+  const response = await apiClient.post<AddCommentResponse>(
+    "api/add-comment",
+    payload,
+  );
+  return response.data;
+}
+
+export async function resetLandmark(
+  modelId: string,
+): Promise<ResetLandmarkResponse> {
+  const response = await apiClient.post<ResetLandmarkResponse>(
+    `api/reset-landmark/${modelId}`,
+  );
   return response.data;
 }
 

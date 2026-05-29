@@ -1,12 +1,12 @@
-import { makeAutoObservable, ObservableMap, reaction } from 'mobx';
-import * as THREE from 'three';
-import { ApiModelDetail, ModelStatus } from '../types/api';
+import { makeAutoObservable, ObservableMap, reaction } from "mobx";
+import * as THREE from "three";
+import { ApiModelDetail, ModelStatus } from "../types/api";
 
-
-import { APP_CONFIG } from '../config/appConfig';
-import { Utils3D } from '../utils/Utils3D';
-import { LandmarkType, MeshManager } from './MeshManager';
-import { StateManager } from './StateManager';
+import { APP_CONFIG } from "../config/appConfig";
+import { fetchAllModelDetails } from "../services/modelService";
+import { Utils3D } from "../utils/Utils3D";
+import { LandmarkType, MeshManager } from "./MeshManager";
+import { StateManager } from "./StateManager";
 
 export class MeshesManager {
   private _libState: StateManager;
@@ -37,7 +37,10 @@ export class MeshesManager {
     }
 
     if (id && this._models.has(id) && !this._models.get(id)!.isReady) {
-      this._libState.viewManager.addLog('That model is still loading.', 'warning');
+      this._libState.viewManager.addLog(
+        "That model is still loading.",
+        "warning",
+      );
       return;
     }
 
@@ -65,9 +68,7 @@ export class MeshesManager {
   }
 
   get glbscenes() {
-    return this.modelsList
-      .filter((m) => m.isReady)
-      .map((m) => m.scene);
+    return this.modelsList.filter((m) => m.isReady).map((m) => m.scene);
   }
 
   // Compatibility getter for older components if needed
@@ -81,12 +82,12 @@ export class MeshesManager {
 
   private createApiModelEntry(apiModel: ApiModelDetail) {
     const placeholderScene = new THREE.Group();
-    placeholderScene.name = apiModel.model_name || 'Loading model';
+    placeholderScene.name = apiModel.model_name || "Loading model";
 
     const fileName =
       apiModel.model_name ||
-      apiModel.model_glb_url.split('/').pop()?.split('\\').pop() ||
-      'Model';
+      apiModel.model_glb_url.split("/").pop()?.split("\\").pop() ||
+      "Model";
 
     const model = new MeshManager(
       placeholderScene.uuid,
@@ -99,7 +100,7 @@ export class MeshesManager {
 
     model.dbId = apiModel.model_id;
     model.status = apiModel.status;
-    model.setLoadState('loading');
+    model.setLoadState("loading");
 
     if (apiModel.images && apiModel.images.length > 0) {
       model.setImages(apiModel.images.map((img) => img.image_url));
@@ -136,7 +137,7 @@ export class MeshesManager {
     const fileName = model.fileName;
     if (!fileName) return;
 
-    const baseName = fileName.split('.').slice(0, -1).join('.') || fileName;
+    const baseName = fileName.split(".").slice(0, -1).join(".") || fileName;
     const jsonPath = `/landmark_json/${encodeURIComponent(baseName)}_landmarks.json`;
 
     try {
@@ -152,14 +153,10 @@ export class MeshesManager {
         throw new Error(`Unexpected landmark JSON structure for ${fileName}`);
       }
 
-      model.processLandmarkResponse(
-        landmarkData,
-        model.status,
-        [landmarkData],
-      );
+      model.processLandmarkResponse(landmarkData, model.status, [landmarkData]);
       this._libState.viewManager.addLog(
         `Loaded local landmarks: ${jsonPath}`,
-        'success',
+        "success",
       );
     } catch (error) {
       console.warn(
@@ -168,7 +165,7 @@ export class MeshesManager {
       );
       this._libState.viewManager.addLog(
         `Failed to load local landmarks for ${fileName}`,
-        'warning',
+        "warning",
       );
     }
   }
@@ -205,18 +202,21 @@ export class MeshesManager {
         return landmarkData;
       };
 
-      const currentLandmarkData = await normalizeLandmarkData(apiModel.landmarks_url);
+      const currentLandmarkData = await normalizeLandmarkData(
+        apiModel.landmarks_url,
+      );
       const originalLandmarkData = apiModel.original_landmarks_url
         ? await normalizeLandmarkData(apiModel.original_landmarks_url)
         : currentLandmarkData;
 
       if (currentLandmarkData) {
-        model.processLandmarkResponse(
-          currentLandmarkData,
-          apiModel.status,
-          [originalLandmarkData ?? currentLandmarkData],
+        model.processLandmarkResponse(currentLandmarkData, apiModel.status, [
+          originalLandmarkData ?? currentLandmarkData,
+        ]);
+        this._libState.viewManager.addLog(
+          `Loaded landmarks for ${model.fileName}`,
+          "success",
         );
-        this._libState.viewManager.addLog(`Loaded landmarks for ${model.fileName}`, 'success');
       }
     } catch (error) {
       console.warn(
@@ -224,7 +224,7 @@ export class MeshesManager {
       );
       this._libState.viewManager.addLog(
         `Failed to fetch S3 landmarks for ${model.fileName}`,
-        'warning',
+        "warning",
       );
     }
   }
@@ -242,7 +242,7 @@ export class MeshesManager {
       model.scene.clear();
       model.scene.copy(scene, true);
       model.scene.name = scene.name || model.scene.name;
-      model.setLoadState('ready');
+      model.setLoadState("ready");
 
       if (!this.selectedModelId) {
         this.setSelectedModelId(model.id);
@@ -252,13 +252,13 @@ export class MeshesManager {
 
       void this.loadModelLandmarks(model, apiModel);
     } catch (error) {
-      console.error('[MeshesManager] Failed to hydrate API model:', error);
+      console.error("[MeshesManager] Failed to hydrate API model:", error);
       model.setLoadError(
-        error instanceof Error ? error.message : 'Failed to load model',
+        error instanceof Error ? error.message : "Failed to load model",
       );
       this._libState.viewManager.addLog(
         `Failed to load model ${model.fileName}`,
-        'error',
+        "error",
       );
     }
   }
@@ -284,7 +284,27 @@ export class MeshesManager {
     await Promise.all(workers);
   }
 
-  async loadApiModelsStaged(apiModels: ApiModelDetail[], initialBatchSize = 10) {
+  async refreshModelFromBackend(modelId: string) {
+    const apiModels = await fetchAllModelDetails();
+    const apiModel = apiModels.find((item) => item.model_id === modelId);
+    const model = this.modelsList.find((item) => item.dbId === modelId);
+
+    if (!apiModel || !model) {
+      return;
+    }
+
+    model.dbId = apiModel.model_id;
+    model.status = apiModel.status;
+    model.setImages(apiModel.images.map((image) => image.image_url));
+    model.setModelComment(apiModel.comments?.[0]?.comment || "");
+
+    await this.hydrateApiModel(model, apiModel);
+  }
+
+  async loadApiModelsStaged(
+    apiModels: ApiModelDetail[],
+    initialBatchSize = 10,
+  ) {
     const stagedModels = apiModels.map((apiModel) => ({
       apiModel,
       model: this.createApiModelEntry(apiModel),
@@ -325,19 +345,19 @@ export class MeshesManager {
     fileName: string;
   } {
     const selected = this.selectedModel;
-    if (!selected || selected.landmarks['Mesh landmarks'].length === 0) {
+    if (!selected || selected.landmarks["Mesh landmarks"].length === 0) {
       this._libState.viewManager.addLog(
-        'No landmark data for selected model to export.',
-        'warning',
+        "No landmark data for selected model to export.",
+        "warning",
       );
       return {
         current: {},
         original: {},
-        fileName: '',
+        fileName: "",
       };
     }
 
-    const rawFileName = selected.fileName || 'model.glb';
+    const rawFileName = selected.fileName || "model.glb";
     const serialized = selected.getSerializedLandmarkPayload();
 
     return {
@@ -399,7 +419,7 @@ export class MeshesManager {
     const fileName = model.fileName;
     if (!fileName) return;
 
-    const baseName = fileName.split('.')[0];
+    const baseName = fileName.split(".")[0];
     const imagePaths = APP_CONFIG.modelImages[baseName] || [];
     model.setImages(imagePaths);
   }
@@ -411,7 +431,7 @@ export class MeshesManager {
   addGLBUrl = async (
     glbUrl: string,
     fileName?: string,
-    category: 'adult' | 'kid' = 'adult',
+    category: "adult" | "kid" = "adult",
     loadStaticLandmarks = false,
   ) => {
     try {
@@ -434,7 +454,7 @@ export class MeshesManager {
       );
       this._models.set(scene.uuid, model);
       this.loadImagesFromConfig(model);
-      model.setLoadState('ready');
+      model.setLoadState("ready");
 
       // Local static landmark fallback kept for reference.
       // if (loadStaticLandmarks) {
@@ -449,14 +469,14 @@ export class MeshesManager {
       }
       return scene.uuid;
     } catch (error) {
-      console.error('[MeshesManager] Failed to load GLB:', error);
+      console.error("[MeshesManager] Failed to load GLB:", error);
       throw error;
     }
   };
 
   addApiModel = async (apiModel: ApiModelDetail) => {
     if (!apiModel.model_glb_url) {
-      throw new Error('GLB URL missing for API model');
+      throw new Error("GLB URL missing for API model");
     }
 
     const model = this.createApiModelEntry(apiModel);

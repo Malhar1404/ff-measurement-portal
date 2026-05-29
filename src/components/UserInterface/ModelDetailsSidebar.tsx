@@ -2,6 +2,8 @@ import {
   EditOutlined,
   Collections,
   EditLocationAlt,
+  Refresh,
+  SaveAlt,
 } from "@mui/icons-material";
 import {
   Box,
@@ -20,6 +22,7 @@ import { useMainContext } from "../../hooks/useMainContext";
 import CommentsBox from "./CommentBox";
 import { downloadFile } from "../../utils/generalUtils";
 import {
+  resetLandmark,
   updateLandmarkJson,
   updateModelStatus,
 } from "../../services/modelService";
@@ -34,6 +37,7 @@ export const ModelDetailsSidebar = observer(() => {
   const modelImages = selectedModel?.images || [];
   const selectedLandmarkName = selectedModel?.selectedMeshLandmarkName ?? null;
   const [isSaving, setIsSaving] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
 
   const [activeTab, setActiveTab] = useState<SidebarTab>("landmarks");
 
@@ -72,6 +76,44 @@ export const ModelDetailsSidebar = observer(() => {
       enqueueSnackbar("Landmarks saved locally.", {
         variant: "success",
       });
+    }
+  };
+
+  const handleResetLandmark = async () => {
+    if (isResetting || !selectedModel?.dbId) {
+      if (!selectedModel?.dbId) {
+        enqueueSnackbar("No model is selected to reset.", {
+          variant: "warning",
+        });
+      }
+      return;
+    }
+
+    setIsResetting(true);
+    try {
+      const response = await resetLandmark(selectedModel.dbId);
+
+      if (!response.success) {
+        throw new Error(response.message || "Failed to reset landmarks.");
+      }
+
+      await meshesManager.refreshModelFromBackend(selectedModel.dbId);
+
+      enqueueSnackbar(response.message || "Landmark JSON reset successfully.", {
+        variant: "success",
+      });
+    } catch (error) {
+      console.error("Failed to reset selected landmark:", error);
+      enqueueSnackbar(
+        error instanceof Error
+          ? error.message
+          : "Failed to reset selected landmark.",
+        {
+          variant: "error",
+        },
+      );
+    } finally {
+      setIsResetting(false);
     }
   };
 
@@ -196,7 +238,9 @@ export const ModelDetailsSidebar = observer(() => {
             p: 1.5,
           }}
         >
-          <Box sx={{ alignItems: "center", display: "flex", gap: 1.25 }}>
+          <Box
+            sx={{ alignItems: "center", display: "flex", gap: 1.25, flex: 1 }}
+          >
             <Typography
               variant="h6"
               sx={{
@@ -208,6 +252,22 @@ export const ModelDetailsSidebar = observer(() => {
               {formatModelName(selectedModel?.fileName)}
             </Typography>
           </Box>
+
+          <Button
+            color="warning"
+            disabled={isResetting}
+            onClick={handleResetLandmark}
+            size="small"
+            startIcon={<Refresh fontSize="small" />}
+            sx={{
+              borderRadius: 2,
+              fontSize: "0.75rem",
+              textTransform: "none",
+            }}
+            variant="outlined"
+          >
+            {isResetting ? "Resetting..." : "Reset"}
+          </Button>
         </Box>
 
         <Box
@@ -394,19 +454,50 @@ export const ModelDetailsSidebar = observer(() => {
         </Box>
 
         {activeTab === "landmarks" ? (
-          <CommentsBox
-            key={selectedModel?.id || "no-model"}
-            defaultValue={selectedModel?.modelComment ?? ""}
-            onSubmit={(comment) => {
-              if (selectedModel) {
-                selectedModel.setModelComment(comment);
-                enqueueSnackbar("Comment saved locally.", {
-                  variant: "success",
-                });
-              }
-            }}
-            disabled={!selectedModel}
-          />
+          <>
+            <CommentsBox
+              key={selectedModel?.id || "no-model"}
+              defaultValue={selectedModel?.modelComment ?? ""}
+              onSubmit={(comment) => {
+                if (selectedModel) {
+                  selectedModel.setModelComment(comment);
+                  enqueueSnackbar("Comment saved locally.", {
+                    variant: "success",
+                  });
+                }
+              }}
+              disabled={!selectedModel}
+            />
+            <Box
+              sx={{
+                backgroundColor: "#fff",
+                borderTop: "1px solid #e0e0e0",
+                p: 1.5,
+                display: "flex",
+                gap: 1,
+              }}
+            >
+              {/* Save Draft */}
+              <Button
+                fullWidth
+                size="small"
+                variant="outlined"
+                color="primary"
+                startIcon={<SaveAlt />}
+                onClick={handleSaveLandmarks}
+                disabled={!selectedModel?.hasLandmarks || isSaving}
+                sx={{
+                  borderRadius: 2,
+                  fontSize: "0.7rem",
+                  py: 0.6,
+                  textTransform: "none",
+                  fontWeight: 500,
+                }}
+              >
+                {isSaving ? "Saving..." : "Save Draft"}
+              </Button>
+            </Box>
+          </>
         ) : null}
       </Paper>
     </Box>
